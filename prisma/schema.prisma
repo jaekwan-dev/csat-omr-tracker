@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Student {
+  id        String   @id // 학번 (예: "1101")
+  name      String
+  grade     Int
+  classNum  Int
+  submissions Submission[]
+}
+
+model Exam {
+  id              Int      @id @default(autoincrement())
+  subject         Subject
+  title           String   // "1회차", "2024-06"
+  totalQuestions  Int
+  startNum        Int      @default(1)
+  questions       Question[]
+  submissions     Submission[]
+}
+
+enum Subject {
+  KOREAN
+  MATH
+  ENGLISH
+}
+
+model Question {
+  id            Int    @id @default(autoincrement())
+  examId        Int
+  exam          Exam   @relation(fields: [examId], references: [id])
+  questionNum   Int
+  correctAnswer Int    // 1-5
+  score         Int
+}
+
+model Submission {
+  id          Int      @id @default(autoincrement())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id])
+  examId      Int
+  exam        Exam     @relation(fields: [examId], references: [id])
+  answers     Json     // {"1": 2, "2": 5, ...}
+  totalScore  Int
+  submittedAt DateTime @default(now())
+}
