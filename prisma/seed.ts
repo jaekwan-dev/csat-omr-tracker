@@ -35,20 +35,28 @@ async function main() {
   }
   console.log(`Created ${students.length} sample students.`);
 
-  // 3. 시험 목록 정의
+  // 3. 과목별 5개씩 시험 생성 (앞의 3개는 응시 완료, 뒤의 2개는 미응시 신규 시험)
   const examSpecs = [
-    // 국어 (1~30번)
-    { subject: Subject.KOREAN, title: "1회차 모의고사", totalQuestions: 30, startNum: 1 },
-    { subject: Subject.KOREAN, title: "2회차 모의고사", totalQuestions: 30, startNum: 1 },
-    { subject: Subject.KOREAN, title: "3회차 모의고사", totalQuestions: 30, startNum: 1 },
-    // 수학 (1~20번)
-    { subject: Subject.MATH, title: "1회차 모의고사", totalQuestions: 20, startNum: 1 },
-    { subject: Subject.MATH, title: "2회차 모의고사", totalQuestions: 20, startNum: 1 },
-    { subject: Subject.MATH, title: "3회차 모의고사", totalQuestions: 20, startNum: 1 },
-    // 영어 (18~45번)
-    { subject: Subject.ENGLISH, title: "1회차 모의고사", totalQuestions: 28, startNum: 18 },
-    { subject: Subject.ENGLISH, title: "2회차 모의고사", totalQuestions: 28, startNum: 18 },
-    { subject: Subject.ENGLISH, title: "2024년 6월 기출", totalQuestions: 28, startNum: 18 },
+    // 국어 (1~30번) - 3개 응시 / 2개 미응시
+    { subject: Subject.KOREAN, title: "1회차 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: true },
+    { subject: Subject.KOREAN, title: "2회차 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: true },
+    { subject: Subject.KOREAN, title: "3회차 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: true },
+    { subject: Subject.KOREAN, title: "4회차 실전 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: false },
+    { subject: Subject.KOREAN, title: "5회차 파이널 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: false },
+
+    // 수학 (1~20번) - 3개 응시 / 2개 미응시
+    { subject: Subject.MATH, title: "1회차 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: true },
+    { subject: Subject.MATH, title: "2회차 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: true },
+    { subject: Subject.MATH, title: "3회차 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: true },
+    { subject: Subject.MATH, title: "4회차 실전 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: false },
+    { subject: Subject.MATH, title: "5회차 파이널 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: false },
+
+    // 영어 (18~45번) - 3개 응시 / 2개 미응시
+    { subject: Subject.ENGLISH, title: "1회차 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: true },
+    { subject: Subject.ENGLISH, title: "2회차 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: true },
+    { subject: Subject.ENGLISH, title: "2024년 6월 기출", totalQuestions: 28, startNum: 18, isSubmitted: true },
+    { subject: Subject.ENGLISH, title: "3회차 실전 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: false },
+    { subject: Subject.ENGLISH, title: "4회차 파이널 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: false },
   ];
 
   const createdExams = [];
@@ -89,13 +97,12 @@ async function main() {
       where: { id: exam.id },
       include: { questions: { orderBy: { questionNum: "asc" } } },
     });
-    if (fullExam) createdExams.push(fullExam);
+    if (fullExam) createdExams.push({ ...fullExam, isSubmitted: spec.isSubmitted });
   }
 
-  console.log(`Created ${createdExams.length} exams with full questions & answer keys.`);
+  console.log(`Created ${createdExams.length} exams (including 6 new unsubmitted exams).`);
 
-  // 4. 제출 데이터 샘플 생성 (제출 이력 & 통계 그래프용)
-  // 날짜 간격을 과거 3주 전부터 최근까지 분산
+  // 4. 제출 데이터 샘플 생성 (isSubmitted가 true인 기존 9개 시험만 제출 이력 생성)
   const baseDates = [
     new Date("2026-07-03T10:00:00Z"),
     new Date("2026-07-10T14:30:00Z"),
@@ -105,8 +112,7 @@ async function main() {
   let totalSubmissionsCount = 0;
 
   for (const student of students) {
-    // 각 학생마다 정답률 시뮬레이션 인자 (김철수: 성적 우상향, 이영희: 상위권, 등)
-    let accuracyRate = 0.7; // 기본 70%
+    let accuracyRate = 0.75;
     if (student.id === "1101") accuracyRate = 0.75; // 김철수
     else if (student.id === "1102") accuracyRate = 0.90; // 이영희
     else if (student.id === "1201") accuracyRate = 0.65; // 박민수
@@ -114,18 +120,18 @@ async function main() {
 
     for (let examIndex = 0; examIndex < createdExams.length; examIndex++) {
       const exam = createdExams[examIndex];
+      // 미응시 시험은 제출 이력을 생성하지 않고 남겨둠
+      if (!exam.isSubmitted) continue;
 
-      // 시험 회차별 날짜 배치
       const roundIndex = examIndex % 3;
-      const dateOffset = Math.floor(Math.random() * 86400000); // 1일 이내 랜덤 시간
+      const dateOffset = Math.floor(Math.random() * 86400000);
       const submittedAt = new Date(baseDates[roundIndex].getTime() + dateOffset);
 
-      // 김철수(1101)는 회차가 올라갈수록 성적 향상 시뮬레이션
       let currentAccuracy = accuracyRate;
       if (student.id === "1101") {
-        currentAccuracy += roundIndex * 0.1; // 75% -> 85% -> 95%
+        currentAccuracy += roundIndex * 0.1;
       } else {
-        currentAccuracy += (Math.random() * 0.15 - 0.07); // 약간의 변동
+        currentAccuracy += (Math.random() * 0.15 - 0.07);
       }
       currentAccuracy = Math.min(Math.max(currentAccuracy, 0.4), 0.98);
 
@@ -160,7 +166,7 @@ async function main() {
     }
   }
 
-  console.log(`Created ${totalSubmissionsCount} submissions for student and teacher statistics.`);
+  console.log(`Created ${totalSubmissionsCount} submissions for past exams.`);
   console.log("Database seed completed successfully! 🚀");
 }
 

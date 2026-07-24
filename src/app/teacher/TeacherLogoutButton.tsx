@@ -1,17 +1,19 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function TeacherLogoutButton() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleLogout() {
     setLoading(true);
-    await fetch("/api/teacher/auth/logout", { method: "POST" });
-    router.push("/teacher/login");
-    router.refresh();
+    try {
+      await fetch("/api/teacher/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error(e);
+    }
+    // 하드 리다이렉트로 세션 및 캐시 초기화
+    window.location.href = "/teacher/login";
   }
 
   return (
@@ -21,7 +23,11 @@ export default function TeacherLogoutButton() {
       className="btn btn-ghost btn-sm"
       style={{ borderColor: "#99f6e4", color: "#0f766e" }}
     >
-      {loading ? <span className="spinner" style={{ width: 14, height: 14, borderTopColor: "#0f766e", borderColor: "#99f6e4" }} /> : "로그아웃"}
+      {loading ? (
+        <span className="spinner" style={{ width: 14, height: 14, borderTopColor: "#0f766e", borderColor: "#99f6e4" }} />
+      ) : (
+        "로그아웃"
+      )}
     </button>
   );
 }

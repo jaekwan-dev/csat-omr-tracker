@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 
 const SUBJECT_LABEL: Record<string, string> = { KOREAN: "국어", MATH: "수학", ENGLISH: "영어" };
+const SUBJECT_EMOJI: Record<string, string> = { KOREAN: "📚", MATH: "✏️", ENGLISH: "💡" };
 const SUBJECT_GRADIENT: Record<string, string> = {
   KOREAN: "linear-gradient(135deg,#667eea,#764ba2)",
   MATH: "linear-gradient(135deg,#f97316,#7c3aed)",
   ENGLISH: "linear-gradient(135deg,#06b6d4,#3b82f6)",
 };
-const SUBJECT_COLOR: Record<string, string> = { KOREAN: "#764ba2", MATH: "#f97316", ENGLISH: "#3b82f6" };
+const SUBJECT_COLOR: Record<string, string> = { KOREAN: "#764ba2", MATH: "#7c3aed", ENGLISH: "#3b82f6" };
 
 interface Question { questionNum: number; correctAnswer: number; score: number; isSubjective: boolean; }
 interface Exam {
@@ -22,6 +23,9 @@ interface Exam {
 export default function ExamManagementPage() {
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>("KOREAN");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [editQuestions, setEditQuestions] = useState<Question[]>([]);
@@ -37,6 +41,14 @@ export default function ExamManagementPage() {
   }, []);
 
   useEffect(() => { fetchExams(); }, [fetchExams]);
+
+  const filteredExams = useMemo(() => {
+    return exams.filter((e) => {
+      const matchSubject = e.subject === selectedSubjectFilter;
+      const matchSearch = e.title.includes(searchQuery) || SUBJECT_LABEL[e.subject]?.includes(searchQuery);
+      return matchSubject && matchSearch;
+    });
+  }, [exams, selectedSubjectFilter, searchQuery]);
 
   async function handleDelete(exam: Exam) {
     if (!confirm(`"${exam.title}" 시험을 삭제하시겠습니까?\n제출된 ${exam._count.submissions}개의 답안도 함께 삭제됩니다.`)) return;
@@ -70,119 +82,161 @@ export default function ExamManagementPage() {
     }
   }
 
-  const grouped = (["ENGLISH", "MATH", "KOREAN"] as const).map((s) => ({
-    subject: s, exams: exams.filter((e) => e.subject === s),
-  }));
-
   return (
-    <div className="container" style={{ paddingTop: 32, paddingBottom: 60 }}>
-      {/* Header */}
+    <div className="container" style={{ paddingTop: 24, paddingBottom: 80 }}>
+      {/* Header Row */}
       <div style={styles.pageHeader}>
         <div>
-          <h1 style={styles.pageTitle}>시험 관리</h1>
-          <p style={styles.pageSubtitle}>시험을 등록하고 정답과 배점을 관리하세요.</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <h1 style={styles.pageTitle}>시험 관리</h1>
+            <span style={styles.countBadge}>{exams.length}개 시험</span>
+          </div>
+          <p style={styles.pageSubtitle}>시험을 등록하고 정답 및 배점을 관리하세요.</p>
         </div>
-        <Link href="/teacher/exams/new" className="btn btn-primary">
-          + 새 시험 등록
+        <Link href="/teacher/exams/new" className="btn btn-primary" style={styles.createBtn}>
+          <span>➕</span>
+          <span>새 시험 등록</span>
         </Link>
       </div>
 
-      {loading && (
-        <div style={{ textAlign: "center", padding: 60 }}>
-          <div className="spinner" style={{ width: 36, height: 36, borderTopColor: "#0f766e", borderColor: "#e2e8f0", margin: "0 auto" }} />
+      {/* Top Filter Bar (스크롤 0% 3열 과목 그리드 & 검색) */}
+      <div style={styles.filterControlCard}>
+        {/* 과목 선택 3열 균등 그리드 */}
+        <div style={styles.subjectFilterGrid}>
+          {[
+            { id: "KOREAN", label: "국어", emoji: "📚", count: exams.filter(e => e.subject === "KOREAN").length },
+            { id: "MATH", label: "수학", emoji: "✏️", count: exams.filter(e => e.subject === "MATH").length },
+            { id: "ENGLISH", label: "영어", emoji: "💡", count: exams.filter(e => e.subject === "ENGLISH").length },
+          ].map((tab) => {
+            const isActive = selectedSubjectFilter === tab.id;
+            const activeColor = SUBJECT_COLOR[tab.id] || "#0f766e";
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedSubjectFilter(tab.id)}
+                style={{
+                  ...styles.subjectGridBtn,
+                  background: isActive ? activeColor : "#f8fafc",
+                  color: isActive ? "#ffffff" : "#475569",
+                  borderColor: isActive ? activeColor : "#cbd5e1",
+                  fontWeight: isActive ? 900 : 700,
+                  boxShadow: isActive ? `0 4px 12px ${activeColor}33` : "none",
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{tab.emoji}</span>
+                <span style={{ fontSize: 14 }}>{tab.label}</span>
+                <span style={{ fontSize: 11, opacity: 0.85, marginLeft: 2 }}>({tab.count})</span>
+              </button>
+            );
+          })}
         </div>
-      )}
 
-      {!loading && exams.length === 0 && (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8" }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>📝</div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>등록된 시험이 없습니다</div>
-          <div style={{ marginTop: 8, fontSize: 14 }}>오른쪽 위 버튼으로 새 시험을 등록하세요.</div>
+        {/* 검색 입력창 */}
+        <div style={styles.searchBox}>
+          <span style={{ fontSize: 16, color: "#94a3b8" }}>🔍</span>
+          <input
+            type="text"
+            placeholder={`${SUBJECT_LABEL[selectedSubjectFilter]} 시험 제목 검색...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={styles.searchInput}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} style={styles.clearBtn}>
+              ✕
+            </button>
+          )}
         </div>
-      )}
-
-      {/* Exam Groups */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-        {grouped.map(({ subject, exams: list }) => {
-          if (!list.length) return null;
-          const color = SUBJECT_COLOR[subject];
-          const gradient = SUBJECT_GRADIENT[subject];
-          return (
-            <div key={subject}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 4, height: 22, borderRadius: 2, background: gradient }} />
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a" }}>
-                  {SUBJECT_LABEL[subject]}
-                </h2>
-                <span style={{ fontSize: 13, color: "#94a3b8" }}>({list.length}개)</span>
-              </div>
-              <div style={styles.examGrid}>
-                {list.map((exam) => (
-                  <div key={exam.id} style={styles.examCard}>
-                    {/* Card Top */}
-                    <div style={{ ...styles.cardTop, background: gradient }}>
-                      <div>
-                        <div style={styles.cardSubjectEn}>{subject}</div>
-                        <div style={styles.cardTitle}>{exam.title}</div>
-                      </div>
-                      <div style={styles.cardMeta}>
-                        <div style={styles.cardChip}>{exam.totalQuestions}문항</div>
-                        <div style={styles.cardChip}>{exam.startNum}번부터</div>
-                      </div>
-                    </div>
-                    {/* Card Stats */}
-                    <div style={styles.cardStats}>
-                      <div style={styles.cardStat}>
-                        <span style={styles.cardStatValue}>{exam._count.submissions}</span>
-                        <span style={styles.cardStatLabel}>제출</span>
-                      </div>
-                      <div style={styles.cardStat}>
-                        <span style={styles.cardStatValue}>
-                          {exam.questions.reduce((s, q) => s + q.score, 0)}
-                        </span>
-                        <span style={styles.cardStatLabel}>만점</span>
-                      </div>
-                    </div>
-                    {/* Actions */}
-                    <div style={styles.cardActions}>
-                      <button
-                        onClick={() => startEdit(exam)}
-                        className="btn btn-ghost btn-sm"
-                        style={{ flex: 1, color }}
-                      >
-                        ✏️ 정답 수정
-                      </button>
-                      <button
-                        onClick={() => handleDelete(exam)}
-                        disabled={deletingId === exam.id}
-                        className="btn btn-sm"
-                        style={{ flex: 1, background: "#fef2f2", color: "#dc2626", border: "1.5px solid #fecaca" }}
-                      >
-                        {deletingId === exam.id ? <span className="spinner" style={{ width: 14, height: 14, borderTopColor: "#dc2626", borderColor: "#fecaca" }} /> : "🗑 삭제"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
       </div>
+
+      {/* Loading / Empty States */}
+      {loading && (
+        <div style={{ textAlign: "center", padding: "60px 0" }}>
+          <div className="spinner" style={{ width: 36, height: 36, borderTopColor: "#0f766e", borderColor: "#e2e8f0", margin: "0 auto" }} />
+          <div style={{ fontSize: 13, color: "#64748b", marginTop: 12 }}>시험 목록을 불러오는 중...</div>
+        </div>
+      )}
+
+      {!loading && filteredExams.length === 0 && (
+        <div style={styles.emptyBox}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>📝</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>등록된 시험이 없습니다</div>
+          <div style={{ fontSize: 13, color: "#64748b" }}>
+            {searchQuery ? "검색 조건에 일치하는 시험이 없습니다." : "상단의 '새 시험 등록' 버튼을 눌러 시험을 추가하세요."}
+          </div>
+        </div>
+      )}
+
+      {/* Compact Exam List View */}
+      {!loading && filteredExams.length > 0 && (
+        <div style={styles.listContainer}>
+          {filteredExams.map((exam) => {
+            const color = SUBJECT_COLOR[exam.subject] || "#0f766e";
+            const emoji = SUBJECT_EMOJI[exam.subject] || "📝";
+            const totalMaxScore = exam.questions.reduce((s, q) => s + q.score, 0);
+
+            return (
+              <div key={exam.id} style={styles.examListItem}>
+                {/* Subject Tag */}
+                <div style={{ ...styles.subjectTag, background: `${color}15`, color }}>
+                  <span style={{ fontSize: 16 }}>{emoji}</span>
+                  <span>{SUBJECT_LABEL[exam.subject]}</span>
+                </div>
+
+                {/* Exam Info Title & Detail */}
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={styles.examItemTitle}>{exam.title}</div>
+                  <div style={styles.examItemMeta}>
+                    <span>{exam.totalQuestions}문항 ({exam.startNum}번부터)</span>
+                    <span>·</span>
+                    <span style={{ fontWeight: 700, color: "#334155" }}>만점: {totalMaxScore}점</span>
+                  </div>
+                </div>
+
+                {/* Submissions Badge */}
+                <div style={styles.submissionCountChip}>
+                  <span>📝</span>
+                  <span>제출 <strong>{exam._count.submissions}</strong>건</span>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={styles.itemActionGroup}>
+                  <button onClick={() => startEdit(exam)} style={{ ...styles.editBtn, color }}>
+                    ✏️ 정답 수정
+                  </button>
+                  <button
+                    onClick={() => handleDelete(exam)}
+                    disabled={deletingId === exam.id}
+                    style={styles.deleteBtn}
+                  >
+                    {deletingId === exam.id ? <span className="spinner" style={{ width: 14, height: 14, borderTopColor: "#dc2626", borderColor: "#fecaca" }} /> : "🗑 삭제"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingExam && (
         <div style={styles.modalOverlay} onClick={(e) => { if (e.target === e.currentTarget) setEditingExam(null); }}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>
-                {editingExam.title} — 정답 수정
-              </h2>
-              <button onClick={() => setEditingExam(null)} style={{ fontSize: 20, cursor: "pointer", background: "none", border: "none", color: "#94a3b8" }}>✕</button>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+              <div>
+                <h2 style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}>
+                  {editingExam.title} — 정답 및 배점 수정
+                </h2>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                  {SUBJECT_LABEL[editingExam.subject]} · 총 {editingExam.totalQuestions}문항
+                </div>
+              </div>
+              <button onClick={() => setEditingExam(null)} style={{ fontSize: 18, cursor: "pointer", background: "none", border: "none", color: "#94a3b8" }}>✕</button>
             </div>
 
-            <div style={{ overflowY: "auto", maxHeight: "60vh", marginBottom: 20 }}>
+            <div style={{ overflowY: "auto", maxHeight: "60vh", marginBottom: 20, borderRadius: 14, border: "1px solid #e2e8f0" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead style={{ position: "sticky", top: 0, background: "#f8faff" }}>
+                <thead style={{ position: "sticky", top: 0, background: "#f8faff", zIndex: 10 }}>
                   <tr>
                     <th style={{ ...styles.editTh, width: 50 }}>번호</th>
                     {editingExam.subject === "MATH" && <th style={{ ...styles.editTh, width: 70 }}>유형</th>}
@@ -194,7 +248,7 @@ export default function ExamManagementPage() {
                   {editQuestions.map((q, i) => (
                     <tr key={q.questionNum} style={{ borderBottom: "1px solid #f1f5f9" }}>
                       <td style={styles.editTd}>
-                        <span style={{ fontWeight: 700, color: "#374151" }}>{q.questionNum}</span>
+                        <span style={{ fontWeight: 800, color: "#374151" }}>{q.questionNum}</span>
                       </td>
                       {editingExam.subject === "MATH" && (
                         <td style={styles.editTd}>
@@ -212,7 +266,7 @@ export default function ExamManagementPage() {
                             }}
                             style={{
                               padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                              cursor: "pointer", border: "1px solid #e2e8f0",
+                              cursor: "pointer", border: "1px solid #cbd5e1",
                               background: q.isSubjective ? "#f1f5f9" : "#fff",
                               color: q.isSubjective ? "#475569" : "#0f172a",
                             }}
@@ -232,8 +286,8 @@ export default function ExamManagementPage() {
                               setEditQuestions(nxt);
                             }}
                             style={{
-                              width: 80, padding: "8px 12px",
-                              borderRadius: 10, border: "2px solid #e2e8f0",
+                              width: 80, padding: "6px 10px",
+                              borderRadius: 8, border: "1.5px solid #cbd5e1",
                               fontSize: 14, fontWeight: 800, textAlign: "center",
                               fontFamily: "inherit", color: "#0f172a",
                               background: "#f8fafc",
@@ -251,8 +305,8 @@ export default function ExamManagementPage() {
                                   setEditQuestions(nxt);
                                 }}
                                 style={{
-                                  width: 34, height: 34, borderRadius: "50%", fontSize: 13, fontWeight: 700,
-                                  border: q.correctAnswer === c ? "none" : "1.5px solid #e2e8f0",
+                                  width: 32, height: 32, borderRadius: "50%", fontSize: 13, fontWeight: 700,
+                                  border: q.correctAnswer === c ? "none" : "1.5px solid #cbd5e1",
                                   background: q.correctAnswer === c ? SUBJECT_COLOR[editingExam.subject] : "#fff",
                                   color: q.correctAnswer === c ? "#fff" : "#475569",
                                   cursor: "pointer", transition: "all 0.12s",
@@ -273,7 +327,7 @@ export default function ExamManagementPage() {
                             nxt[i] = { ...nxt[i], score: Number(e.target.value) };
                             setEditQuestions(nxt);
                           }}
-                          style={{ width: 60, padding: "6px 8px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 14, fontWeight: 700, textAlign: "center", fontFamily: "inherit" }}
+                          style={{ width: 54, padding: "6px 8px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: 14, fontWeight: 700, textAlign: "center", fontFamily: "inherit" }}
                         />
                       </td>
                     </tr>
@@ -291,7 +345,7 @@ export default function ExamManagementPage() {
                 className="btn btn-primary"
                 style={{ flex: 2, background: SUBJECT_GRADIENT[editingExam.subject], boxShadow: `0 4px 14px ${SUBJECT_COLOR[editingExam.subject]}44` }}
               >
-                {saving ? <><span className="spinner" />저장 중...</> : "💾 저장"}
+                {saving ? <><span className="spinner" />저장 중...</> : "💾 저장하기"}
               </button>
             </div>
           </div>
@@ -302,29 +356,170 @@ export default function ExamManagementPage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  pageHeader: { display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 32, flexWrap: "wrap", gap: 16 },
-  pageTitle: { fontSize: "clamp(22px,3vw,30px)", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em" },
-  pageSubtitle: { fontSize: 14, color: "#64748b", marginTop: 4 },
-  examGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 16 },
-  examCard: { background: "#fff", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 16px rgba(0,0,0,0.07)", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column" },
-  cardTop: { padding: "20px 20px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
-  cardSubjectEn: { fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.7)", letterSpacing: "0.1em", marginBottom: 4 },
-  cardTitle: { fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" },
-  cardMeta: { display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" },
-  cardChip: { background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 999 },
-  cardStats: { display: "flex", padding: "14px 20px", gap: 20, borderBottom: "1px solid #f1f5f9" },
-  cardStat: { display: "flex", flexDirection: "column", gap: 2 },
-  cardStatValue: { fontSize: 22, fontWeight: 900, color: "#0f172a", lineHeight: 1 },
-  cardStatLabel: { fontSize: 11, color: "#94a3b8", fontWeight: 600 },
-  cardActions: { padding: "14px 16px", display: "flex", gap: 8 },
+  pageHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 },
+  pageTitle: { fontSize: 24, fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em" },
+  pageSubtitle: { fontSize: 13, color: "#64748b", marginTop: 2 },
+  countBadge: { background: "#ccfbf1", color: "#0f766e", fontSize: 12, fontWeight: 800, padding: "3px 10px", borderRadius: 999 },
+  createBtn: { background: "linear-gradient(135deg, #0f766e, #0891b2)", color: "#fff", boxShadow: "0 4px 14px rgba(8,145,178,0.3)", padding: "10px 18px", borderRadius: 14, fontSize: 14 },
+
+  filterControlCard: {
+    background: "#ffffff",
+    borderRadius: 20,
+    padding: "14px 16px",
+    border: "1px solid #cbd5e1",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+    marginBottom: 20,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  subjectFilterGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 8,
+  },
+  subjectGridBtn: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    padding: "10px 8px",
+    borderRadius: 14,
+    cursor: "pointer",
+    border: "1.5px solid #cbd5e1",
+    transition: "all 0.15s",
+    textAlign: "center",
+  },
+  searchBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#f8fafc",
+    borderRadius: 14,
+    padding: "8px 14px",
+    border: "1px solid #cbd5e1",
+  },
+  searchInput: {
+    flex: 1,
+    border: "none",
+    background: "transparent",
+    fontSize: 14,
+    outline: "none",
+    color: "#0f172a",
+  },
+  clearBtn: {
+    fontSize: 13,
+    color: "#94a3b8",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+  },
+
+  emptyBox: {
+    background: "#fff",
+    borderRadius: 20,
+    padding: "50px 20px",
+    textAlign: "center",
+    border: "1px solid #e2e8f0",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  /* Compact List View */
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+  examListItem: {
+    background: "#ffffff",
+    borderRadius: 18,
+    padding: "14px 18px",
+    border: "1px solid #cbd5e1",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+    flexWrap: "wrap",
+    transition: "all 0.15s ease",
+  },
+  subjectTag: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "6px 12px",
+    borderRadius: 12,
+    fontSize: 13,
+    fontWeight: 900,
+    flexShrink: 0,
+  },
+  examItemTitle: {
+    fontSize: 16,
+    fontWeight: 900,
+    color: "#0f172a",
+    letterSpacing: "-0.01em",
+  },
+  examItemMeta: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: 3,
+  },
+  submissionCountChip: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    background: "#f0fdfa",
+    color: "#0f766e",
+    border: "1px solid #99f6e4",
+    fontSize: 12,
+    fontWeight: 700,
+    padding: "6px 12px",
+    borderRadius: 999,
+    flexShrink: 0,
+  },
+  itemActionGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: "auto",
+    flexShrink: 0,
+  },
+  editBtn: {
+    padding: "8px 14px",
+    borderRadius: 12,
+    background: "#f1f5f9",
+    fontWeight: 800,
+    fontSize: 13,
+    cursor: "pointer",
+    border: "1px solid #cbd5e1",
+    transition: "all 0.15s",
+  },
+  deleteBtn: {
+    padding: "8px 14px",
+    borderRadius: 12,
+    background: "#fef2f2",
+    color: "#dc2626",
+    fontWeight: 800,
+    fontSize: 13,
+    cursor: "pointer",
+    border: "1px solid #fecaca",
+    transition: "all 0.15s",
+  },
+
+  /* Edit Modal */
   modalOverlay: {
     position: "fixed", inset: 0, zIndex: 100,
     background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)",
     display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
   },
   modal: {
-    background: "#fff", borderRadius: 24, padding: "32px 28px",
-    width: "100%", maxWidth: 540,
+    background: "#fff", borderRadius: 24, padding: "28px 24px",
+    width: "100%", maxWidth: 520,
     boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
     animation: "scaleIn 0.2s ease",
   },

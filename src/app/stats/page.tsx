@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
+import StudentHeader from "@/components/StudentHeader";
 
 interface Summary {
   totalExams: number;
@@ -44,7 +44,7 @@ export default function StatsPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [subjectStats, setSubjectStats] = useState<Record<string, SubjectStat>>({});
   const [chartData, setChartData] = useState<ChartItem[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState<string>("ALL");
+  const [selectedSubject, setSelectedSubject] = useState<string>("KOREAN");
 
   useEffect(() => {
     async function fetchStats() {
@@ -68,32 +68,21 @@ export default function StatsPage() {
     fetchStats();
   }, []);
 
-  const filteredChartData = selectedSubject === "ALL"
-    ? chartData
-    : chartData.filter((item) => item.subject === selectedSubject);
+  const filteredChartData = chartData.filter((item) => item.subject === selectedSubject);
 
   return (
     <div style={styles.page}>
       <div style={styles.bgDeco} />
 
-      <header style={styles.header}>
-        <div className="container" style={styles.headerInner}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 24 }}>📈</span>
-            <span style={{ fontSize: 18, fontWeight: 900, color: "#1e3a8a", letterSpacing: "-0.02em" }}>
-              성적 통계 & 분석
-            </span>
-          </div>
-        </div>
-      </header>
+      <StudentHeader />
 
       <main className="container" style={styles.main}>
         <div className="anim-fadeInUp" style={{ marginBottom: 20 }}>
           <h1 style={{ fontSize: 24, fontWeight: 900, color: "#0f172a", marginBottom: 8 }}>
-            나의 성적 추이 리포트
+            성적 통계
           </h1>
           <p style={{ fontSize: 14, color: "#475569" }}>
-            시험별 성적 변화 흐름과 과목별 강점 및 약점을 분석합니다.
+            응시한 시험의 성적 지표 및 변화 추이입니다.
           </p>
         </div>
 
@@ -133,29 +122,30 @@ export default function StatsPage() {
               </div>
             </div>
 
-            {/* Subject Filter Buttons */}
-            <div style={styles.filterBar}>
+            {/* Subject Filter Grid (스크롤 0% 3열 과목 그리드) */}
+            <div style={styles.filterGrid}>
               {[
-                { id: "ALL", label: "전체 추이", emoji: "📊" },
                 { id: "KOREAN", label: "국어", emoji: "📚" },
                 { id: "MATH", label: "수학", emoji: "✏️" },
                 { id: "ENGLISH", label: "영어", emoji: "💡" },
               ].map((f) => {
                 const isActive = selectedSubject === f.id;
+                const activeColor = SUBJECT_META[f.id]?.color || "#3b82f6";
                 return (
                   <button
                     key={f.id}
                     onClick={() => setSelectedSubject(f.id)}
                     style={{
-                      ...styles.filterBtn,
-                      background: isActive ? "#3b82f6" : "#fff",
-                      color: isActive ? "#fff" : "#475569",
-                      boxShadow: isActive ? "0 4px 12px rgba(59,130,246,0.3)" : "none",
-                      border: isActive ? "1px solid #3b82f6" : "1px solid #e2e8f0",
+                      ...styles.filterGridBtn,
+                      background: isActive ? activeColor : "#ffffff",
+                      color: isActive ? "#ffffff" : "#475569",
+                      borderColor: isActive ? activeColor : "#cbd5e1",
+                      boxShadow: isActive ? `0 4px 12px ${activeColor}33` : "none",
+                      fontWeight: isActive ? 900 : 700,
                     }}
                   >
-                    <span>{f.emoji}</span>
-                    <span>{f.label}</span>
+                    <span style={{ fontSize: 16 }}>{f.emoji}</span>
+                    <span style={{ fontSize: 14 }}>{f.label}</span>
                   </button>
                 );
               })}
@@ -166,7 +156,7 @@ export default function StatsPage() {
               <div style={styles.chartTitleRow}>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>
-                    📉 성적 변화 흐름 (백분율 %)
+                    📉 {SUBJECT_META[selectedSubject]?.label} 성적 변화 흐름 (백분율 %)
                   </div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                     응시한 시험의 획득 점수 비율(%) 추이입니다.
@@ -180,15 +170,15 @@ export default function StatsPage() {
                 </div>
               ) : (
                 <div style={{ marginTop: 20 }}>
-                  {/* SVG Line / Bar Visualizer */}
-                  <div style={{ position: "relative", height: 200, width: "100%", display: "flex", alignItems: "flex-end", gap: 12, paddingBottom: 24, borderBottom: "2px dashed #e2e8f0" }}>
-                    {filteredChartData.map((item, idx) => {
+                  {/* Visualizer Container (No overflow) */}
+                  <div style={{ position: "relative", height: 180, width: "100%", display: "flex", alignItems: "flex-end", gap: 8, paddingBottom: 24, borderBottom: "2px dashed #e2e8f0" }}>
+                    {filteredChartData.map((item) => {
                       const meta = SUBJECT_META[item.subject] || { color: "#3b82f6", emoji: "📝", label: item.subject };
                       const heightPercent = Math.max(item.scorePercent, 10);
                       return (
-                        <div key={item.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", position: "relative" }}>
-                          {/* Score Label Popup */}
-                          <div style={{ fontSize: 12, fontWeight: 900, color: meta.color, marginBottom: 6 }}>
+                        <div key={item.id} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end" }}>
+                          {/* Score Label */}
+                          <div style={{ fontSize: 11, fontWeight: 900, color: meta.color, marginBottom: 4 }}>
                             {item.scorePercent}%
                           </div>
                           
@@ -201,7 +191,7 @@ export default function StatsPage() {
                               background: meta.color,
                               borderRadius: "8px 8px 0 0",
                               boxShadow: `0 4px 10px ${meta.color}44`,
-                              transition: "height 0.5s ease",
+                              transition: "height 0.4s ease",
                             }}
                           />
                         </div>
@@ -210,10 +200,10 @@ export default function StatsPage() {
                   </div>
 
                   {/* X Axis Labels */}
-                  <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                     {filteredChartData.map((item) => (
-                      <div key={item.id} style={{ flex: 1, textAlign: "center" }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#334155" }}>
+                      <div key={item.id} style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {item.title}
                         </div>
                         <div style={{ fontSize: 10, color: "#94a3b8" }}>
@@ -282,19 +272,19 @@ export default function StatsPage() {
                     <div style={styles.statGrid}>
                       <div>
                         <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>평균 점수</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: meta.color }}>{stat.avgScore}점</div>
+                        <div style={{ fontSize: 17, fontWeight: 900, color: meta.color }}>{stat.avgScore}점</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>최고 점수</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}>{stat.highestScore}점</div>
+                        <div style={{ fontSize: 17, fontWeight: 900, color: "#0f172a" }}>{stat.highestScore}점</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>최근 점수</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}>{stat.recentScore}점</div>
+                        <div style={{ fontSize: 17, fontWeight: 900, color: "#0f172a" }}>{stat.recentScore}점</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>평균 정답률</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: "#10b981" }}>{stat.accuracy}%</div>
+                        <div style={{ fontSize: 17, fontWeight: 900, color: "#10b981" }}>{stat.accuracy}%</div>
                       </div>
                     </div>
 
@@ -328,6 +318,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     position: "relative",
+    overflowX: "hidden",
   },
   bgDeco: {
     position: "fixed",
@@ -362,12 +353,12 @@ const styles: Record<string, React.CSSProperties> = {
   summaryGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-    gap: 12,
+    gap: 10,
   },
   summaryCard: {
     background: "#fff",
     borderRadius: 18,
-    padding: "16px 14px",
+    padding: "16px 10px",
     boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
     border: "1px solid #f1f5f9",
     display: "flex",
@@ -391,24 +382,26 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#94a3b8",
     marginTop: 4,
   },
-  filterBar: {
-    display: "flex",
+
+  /* 3-column zero-scroll subject filter grid */
+  filterGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
     gap: 8,
-    overflowX: "auto",
-    paddingBottom: 4,
   },
-  filterBtn: {
-    display: "inline-flex",
+  filterGridBtn: {
+    display: "flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
-    padding: "8px 16px",
-    borderRadius: 999,
-    fontSize: 13,
-    fontWeight: 700,
+    padding: "10px 4px",
+    borderRadius: 14,
+    border: "1.5px solid #cbd5e1",
     cursor: "pointer",
-    whiteSpace: "nowrap",
-    transition: "all 0.2s",
+    transition: "all 0.15s ease",
+    textAlign: "center",
   },
+
   chartCard: {
     background: "#fff",
     borderRadius: 20,
@@ -436,7 +429,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   statGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
+    gridTemplateColumns: "repeat(auto-fit, minmax(65px, 1fr))",
     gap: 8,
     background: "#f8fafc",
     padding: 12,
