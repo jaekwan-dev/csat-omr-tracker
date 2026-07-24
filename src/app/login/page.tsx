@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -175,9 +176,14 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p style={styles.footerNote}>
-            학번 또는 이름을 모르는 경우 담당 선생님께 문의하세요.
-          </p>
+          <div style={styles.footerWrap}>
+            <p style={styles.footerNote}>
+              학번 또는 이름을 모르는 경우 담당 선생님께 문의하세요.
+            </p>
+            <Link href="/teacher/login" style={styles.teacherLink}>
+              교사용 로그인 가기 →
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -331,11 +337,26 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     color: "#94a3b8",
   },
+  footerWrap: {
+    marginTop: 24,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+  },
   footerNote: {
-    fontSize: 12,
-    color: "#94a3b8",
+    fontSize: 13,
+    color: "#64748b",
     textAlign: "center",
-    lineHeight: 1.6,
-    paddingTop: 4,
+  },
+  teacherLink: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#3b82f6",
+    textDecoration: "none",
+    padding: "6px 12px",
+    borderRadius: 8,
+    background: "#eff6ff",
+    transition: "all 0.2s",
   },
 };
