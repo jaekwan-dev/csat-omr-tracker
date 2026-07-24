@@ -11,19 +11,19 @@ export default function BottomNav() {
       <Link href="/" style={styles.linkWrapper}>
         <div style={{ ...styles.navItem, ...(pathname === "/" ? styles.navItemActive : {}) }}>
           <span style={styles.navIcon}>🏠</span>
-          <span style={styles.navLabel}>홈</span>
+          <span style={{ ...styles.navLabel, ...(pathname === "/" ? styles.navLabelActive : {}) }}>홈</span>
         </div>
       </Link>
       <Link href="/history" style={styles.linkWrapper}>
         <div style={{ ...styles.navItem, ...(pathname === "/history" ? styles.navItemActive : {}) }}>
-          <span style={styles.navIcon}>📊</span>
-          <span style={styles.navLabel}>학습 이력</span>
+          <span style={styles.navIcon}>📋</span>
+          <span style={{ ...styles.navLabel, ...(pathname === "/history" ? styles.navLabelActive : {}) }}>학습 이력</span>
         </div>
       </Link>
-      <Link href="#" style={styles.linkWrapper}>
-        <div style={styles.navItem}>
-          <span style={styles.navIcon}>👤</span>
-          <span style={styles.navLabel}>내 정보</span>
+      <Link href="/stats" style={styles.linkWrapper}>
+        <div style={{ ...styles.navItem, ...(pathname === "/stats" ? styles.navItemActive : {}) }}>
+          <span style={styles.navIcon}>📈</span>
+          <span style={{ ...styles.navLabel, ...(pathname === "/stats" ? styles.navLabelActive : {}) }}>성적 통계</span>
         </div>
       </Link>
     </nav>
@@ -74,5 +74,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     fontWeight: 600,
     color: "#94a3b8",
+  },
+  navLabelActive: {
+    color: "#2563eb",
+    fontWeight: 800,
   },
 };

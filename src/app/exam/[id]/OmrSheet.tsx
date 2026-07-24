@@ -106,13 +106,28 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
   }, []);
 
   async function handleSubmit() {
+    const isDirectSubmitSubject = exam.subject === "KOREAN" || exam.subject === "MATH";
+
+    if (isDirectSubmitSubject) {
+      const confirmMessage = unansweredNums.length > 0
+        ? `미마킹 문항 ${unansweredNums.length}개가 있습니다.\n정말 제출하겠습니까?`
+        : "정말 제출하겠습니까?";
+      if (window.confirm(confirmMessage)) {
+        await doSubmit();
+      }
+      return;
+    }
+
     if (unansweredNums.length > 0) {
       setWarning(
         `미마킹 문항 ${unansweredNums.length}개: ${unansweredNums.join(", ")}번`
       );
       return;
     }
-    await doSubmit();
+
+    if (window.confirm("정말 제출하겠습니까?")) {
+      await doSubmit();
+    }
   }
 
   async function doSubmit() {
