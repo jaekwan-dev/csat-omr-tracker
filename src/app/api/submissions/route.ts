@@ -5,7 +5,7 @@ import { getSessionFromRequest } from "@/lib/session";
 export async function POST(req: NextRequest) {
   try {
     // 1. 세션 확인
-    const session = getSessionFromRequest(req);
+    const session = await getSessionFromRequest(req);
     if (!session) {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }

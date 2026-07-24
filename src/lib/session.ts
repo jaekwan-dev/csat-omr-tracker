@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { verifyJwt } from "./jwt";
 
 export interface SessionUser {
   studentId: string;
@@ -14,11 +15,13 @@ export interface SessionUser {
 export async function getSession(): Promise<SessionUser | null> {
   try {
     const cookieStore = await cookies();
-    const session = cookieStore.get("session");
-    if (!session?.value) return null;
-    const parsed = JSON.parse(session.value) as SessionUser;
-    if (!parsed.studentId || !parsed.name) return null;
-    return parsed;
+    const sessionCookie = cookieStore.get("session");
+    if (!sessionCookie?.value) return null;
+    
+    const payload = await verifyJwt(sessionCookie.value);
+    if (!payload || !payload.studentId || !payload.name) return null;
+    
+    return payload as unknown as SessionUser;
   } catch {
     return null;
   }
@@ -27,14 +30,16 @@ export async function getSession(): Promise<SessionUser | null> {
 /**
  * Route Handler에서 Request 객체로 세션을 파싱합니다.
  */
-export function getSessionFromRequest(req: Request): SessionUser | null {
+export async function getSessionFromRequest(req: Request): Promise<SessionUser | null> {
   try {
     const cookieHeader = req.headers.get("cookie") ?? "";
     const match = cookieHeader.match(/(?:^|;\s*)session=([^;]*)/);
     if (!match) return null;
-    const parsed = JSON.parse(decodeURIComponent(match[1])) as SessionUser;
-    if (!parsed.studentId || !parsed.name) return null;
-    return parsed;
+    
+    const payload = await verifyJwt(match[1]);
+    if (!payload || !payload.studentId || !payload.name) return null;
+    
+    return payload as unknown as SessionUser;
   } catch {
     return null;
   }

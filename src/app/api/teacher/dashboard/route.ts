@@ -5,7 +5,7 @@ import { getTeacherSessionFromRequest } from "@/lib/teacherSession";
 // GET /api/teacher/dashboard?examId=1  → 해당 시험 응시자 전체 성적
 // GET /api/teacher/dashboard?studentId=1101 → 해당 학생의 전체 시험 이력
 export async function GET(req: NextRequest) {
-  if (!getTeacherSessionFromRequest(req)) {
+  if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
 

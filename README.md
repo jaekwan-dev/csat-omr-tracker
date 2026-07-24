@@ -16,17 +16,19 @@
 ## 🚀 주요 기능
 
 ### 학생용
-- **학번 + 이름 로그인** (예: 1학년 1반 1번 → `1101`)
+- **학번 + 이름 + PIN 번호 로그인** (예: 1학년 1반 1번 → `1101`, PIN: `1234`)
 - **과목 선택** — 국어 / 수학 / 영어
-- **OMR 마킹** — 문항별 1~5번 선택, 경과 시간 타이머, 미마킹 경고 Alert
+- **OMR 마킹 & 임시저장** — 실시간 로컬 스토리지 임시저장으로 브라우저 이탈 시 복구, 미마킹 경고 Alert
 - **즉시 자동 채점** — 총점, 정답/오답/미응답 수, 문항별 정오답 비교
+- **제출 이력 (History)** — 본인이 제출한 과거 시험 성적 및 통계 조회
 
 ### 교사용
-- **시험 등록** — 과목·회차 선택 시 문항 수/시작 번호 자동 설정, 문항별 정답·배점 입력
+- **학생 관리 (CRUD)** — 학생 계정 생성 시 고유 **PIN 번호 자동 발급** (대리 마킹 방지)
+- **CSV 대량 등록** — 엑셀 양식을 통한 수십 명 단위의 학생 및 PIN 일괄 등록 지원
+- **시험 등록** — 과목·회차 선택 시 문항 수/시작 번호 자동 설정, 주관식 문항 지정
 - **정답 수정** — 등록된 시험의 정답표 모달에서 바로 수정
 - **성적 대시보드** — 시험 선택 → 학생별 석차·총점·정답률 테이블
 - **반별 필터 / 다중 정렬** — 반 필터 버튼, 석차·학번·이름·정답률 컬럼 클릭 정렬
-- **성적 추이 차트** — 학생 행 클릭 시 인라인 SVG 선 그래프(과목별 색상 구분)
 - **CSV 다운로드** — 석차·문항별 답안 포함, Excel 한글 정상 출력
 
 ---
@@ -48,7 +50,7 @@
 | 프레임워크 | [Next.js 16](https://nextjs.org) (App Router) |
 | DB ORM | [Prisma 7](https://www.prisma.io) + `@prisma/adapter-pg` |
 | 데이터베이스 | PostgreSQL (Neon Serverless) |
-| 인증 | HttpOnly 쿠키 기반 세션 |
+| 인증 | JWT (jose 라이브러리) + HttpOnly 쿠키 |
 | 스타일 | Vanilla CSS (글로벌 디자인 시스템) |
 | 런타임 | Node.js 20 |
 
@@ -94,8 +96,9 @@ src/
 # 의존성 설치
 npm install
 
-# 환경 변수 설정 (.env)
+# 환경 변수 설정 (.env.local)
 DATABASE_URL="postgresql://..."
+JWT_SECRET="super-secret-jwt-key"
 TEACHER_PASSWORD="teacher1234"
 
 # DB 마이그레이션
@@ -119,11 +122,11 @@ npm run dev
 
 ---
 
-## 🔐 인증 구조
+## 🔐 인증 구조 (Security)
 
-- **학생:** 학번 + 이름 조합 매칭 → `student_session` HttpOnly 쿠키 (7일)
-- **교사:** 환경변수 `TEACHER_PASSWORD` 일치 확인 → `teacher_session` HttpOnly 쿠키 (8시간)
-- **보안:** 학생은 본인 제출 데이터만 조회 가능, 정답은 서버에서만 채점 (클라이언트 미노출)
+- **학생:** 학번 + 이름 + PIN 번호(4자리) 3중 매칭 → Edge 런타임에서 `jose`를 통해 암호화 서명된 JWT 발급 → `session` HttpOnly 쿠키 (7일)
+- **교사:** 환경변수 `TEACHER_PASSWORD` 매칭 → 암호화 서명된 관리자 JWT 발급 → `teacher_session` HttpOnly 쿠키 (8시간)
+- **보안 검증:** API 및 페이지 접근 시 미들웨어(`middleware.ts`)에서 JWT 서명의 유효성을 엄격하게 검증하여 위조 및 탈취 방지
 
 ---
 
@@ -133,8 +136,8 @@ npm run dev
 Student ─── Submission ─── Exam ─── Question
    id            id           id         id
    name          studentId    subject    examId
-   grade         examId       title      questionNum
-   classNum      answers(JSON)totalQ.    correctAnswer
-                 totalScore   startNum   score
+   pinCode       examId       title      questionNum
+   grade         answers(JSON)totalQ.    correctAnswer
+   classNum      totalScore   startNum   score
                  submittedAt
 ```

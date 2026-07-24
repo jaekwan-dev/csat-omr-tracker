@@ -1,0 +1,2 @@
+# Project Rules\n\n- **Documentation Storage**: All implementation plans, analysis reports, walkthroughs, and system architectures created during conversations MUST be written to or copied into the docs/ directory within the project workspace to maintain a permanent historical record.
+- **README Maintenance**: Whenever a new feature is implemented, the README.md file MUST be updated to reflect the new capabilities, architecture changes, or setup instructions.

@@ -5,7 +5,7 @@ import { getTeacherSessionFromRequest } from "@/lib/teacherSession";
 interface Params { params: Promise<{ id: string }> }
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  if (!getTeacherSessionFromRequest(req)) {
+  if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
 
@@ -13,15 +13,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   try {
     const body = await req.json();
-    const { name, grade, classNum } = body as {
+    const { name, grade, classNum, pinCode } = body as {
       name?: string;
       grade?: number;
       classNum?: number;
+      pinCode?: string;
     };
 
     const student = await prisma.student.update({
       where: { id },
-      data: { name, grade, classNum },
+      data: { name, grade, classNum, pinCode },
       include: { _count: { select: { submissions: true } } }
     });
 
@@ -33,7 +34,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!getTeacherSessionFromRequest(req)) {
+  if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
 

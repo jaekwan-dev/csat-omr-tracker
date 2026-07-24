@@ -4,7 +4,7 @@ import { getTeacherSessionFromRequest } from "@/lib/teacherSession";
 
 // GET /api/teacher/dashboard/csv?examId=1
 export async function GET(req: NextRequest) {
-  if (!getTeacherSessionFromRequest(req)) {
+  if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
 

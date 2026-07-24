@@ -5,7 +5,7 @@ import { Subject } from "@prisma/client";
 
 // GET /api/teacher/exams → 전체 시험 목록 (정답 포함)
 export async function GET(req: NextRequest) {
-  if (!getTeacherSessionFromRequest(req)) {
+  if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
   const exams = await prisma.exam.findMany({
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/teacher/exams → 새 시험 생성
 export async function POST(req: NextRequest) {
-  if (!getTeacherSessionFromRequest(req)) {
+  if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
   try {

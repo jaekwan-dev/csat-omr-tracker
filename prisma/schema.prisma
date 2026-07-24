@@ -9,6 +9,7 @@ datasource db {
 model Student {
   id        String   @id // 학번 (예: "1101")
   name      String
+  pinCode   String   @default("0000")
   grade     Int
   classNum  Int
   submissions Submission[]

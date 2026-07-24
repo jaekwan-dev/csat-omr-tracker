@@ -6,16 +6,16 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   return (
     <div style={{ minHeight: "100vh", background: "#f0fdfa", display: "flex", flexDirection: "column" }}>
       <header style={styles.header}>
-        <div className="container" style={styles.headerInner}>
+        <div className="container teacher-header-inner" style={styles.headerInner}>
           <div style={styles.logo}>
             <span style={styles.logoIcon}>📋</span>
             <span style={styles.logoText}>수능 OMR 교사</span>
             <span style={styles.logoBadge}>관리자</span>
           </div>
-          <nav style={styles.nav}>
-            <Link href="/teacher" style={styles.navLink}>📊 대시보드</Link>
-            <Link href="/teacher/exams" style={styles.navLink}>✏️ 시험 관리</Link>
-            <Link href="/teacher/students" style={styles.navLink}>👥 학생 관리</Link>
+          <nav className="teacher-nav" style={styles.nav}>
+            <Link href="/teacher" className="teacher-nav-link" style={styles.navLink}>📊 대시보드</Link>
+            <Link href="/teacher/exams" className="teacher-nav-link" style={styles.navLink}>✏️ 시험 관리</Link>
+            <Link href="/teacher/students" className="teacher-nav-link" style={styles.navLink}>👥 학생 관리</Link>
           </nav>
           <TeacherLogoutButton />
         </div>

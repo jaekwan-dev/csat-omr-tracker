@@ -7,14 +7,16 @@ export default function LoginPage() {
   const router = useRouter();
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
+  const [pinCode, setPinCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
+  const pinRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!studentId.trim() || !name.trim()) {
-      setError("학번과 이름을 모두 입력해주세요.");
+    if (!studentId.trim() || !name.trim() || !pinCode.trim()) {
+      setError("학번, 이름, 그리고 4자리 PIN 번호를 모두 입력해주세요.");
       return;
     }
     setError("");
@@ -23,7 +25,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: studentId.trim(), name: name.trim() }),
+        body: JSON.stringify({ studentId: studentId.trim(), name: name.trim(), pinCode: pinCode.trim() }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -42,7 +44,7 @@ export default function LoginPage() {
   return (
     <div style={styles.page}>
       {/* Left panel - Branding */}
-      <div style={styles.leftPanel}>
+      <div className="login-panel-left" style={styles.leftPanel}>
         <div style={styles.leftInner}>
           <div style={styles.logoArea}>
             <div style={styles.logoIcon}>🎯</div>
@@ -83,8 +85,8 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel - Login form */}
-      <div style={styles.rightPanel}>
-        <div className="anim-fadeInUp" style={styles.formCard}>
+      <div className="login-panel-right" style={styles.rightPanel}>
+        <div className="anim-fadeInUp login-card" style={styles.formCard}>
           <div style={styles.formHeader}>
             <h2 style={styles.formTitle}>로그인</h2>
             <p style={styles.formSubtitle}>학번과 이름으로 시작하세요</p>
@@ -124,6 +126,28 @@ export default function LoginPage() {
                 placeholder="홍길동"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && name.length > 0) {
+                    e.preventDefault();
+                    pinRef.current?.focus();
+                  }
+                }}
+                disabled={loading}
+              />
+            </div>
+
+            <div style={styles.field}>
+              <label className="label" htmlFor="pinCode">PIN 번호 (4자리)</label>
+              <input
+                id="pinCode"
+                ref={pinRef}
+                className="input"
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="****"
+                value={pinCode}
+                onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ""))}
                 disabled={loading}
               />
             </div>
@@ -138,7 +162,7 @@ export default function LoginPage() {
             <button
               type="submit"
               className="btn btn-primary btn-lg btn-full"
-              disabled={loading || !studentId || !name}
+              disabled={loading || !studentId || !name || pinCode.length < 4}
             >
               {loading ? (
                 <>

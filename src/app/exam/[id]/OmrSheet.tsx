@@ -48,6 +48,29 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
   const [submitting, setSubmitting] = useState(false);
   const [warning, setWarning] = useState("");
   const [elapsedSec, setElapsedSec] = useState(0);
+  
+  const storageKey = `omr_answers_${exam.id}_${student.studentId}`;
+
+  // 초기 렌더링 시 임시저장된 데이터 불러오기
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        setAnswers(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error("임시저장 데이터를 불러오는데 실패했습니다.", e);
+    }
+  }, [storageKey]);
+
+  // 마킹 내용 변경 시 자동 임시저장
+  useEffect(() => {
+    if (Object.keys(answers).length > 0) {
+      localStorage.setItem(storageKey, JSON.stringify(answers));
+    } else {
+      localStorage.removeItem(storageKey);
+    }
+  }, [answers, storageKey]);
 
   const color = SUBJECT_COLOR[exam.subject] ?? "#3b82f6";
   const gradient = SUBJECT_GRADIENT[exam.subject] ?? SUBJECT_GRADIENT.ENGLISH;
@@ -107,6 +130,10 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
         setSubmitting(false);
         return;
       }
+      
+      // 제출 성공 시 임시저장 데이터 삭제
+      localStorage.removeItem(storageKey);
+      
       router.push(`/result/${data.submissionId}`);
     } catch {
       setWarning("네트워크 오류가 발생했습니다.");

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getTeacherSessionFromRequest } from "@/lib/teacherSession";
 
 export async function GET(req: NextRequest) {
-  if (!getTeacherSessionFromRequest(req)) {
+  if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
 
@@ -26,20 +26,21 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!getTeacherSessionFromRequest(req)) {
+  if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
 
   try {
     const body = await req.json();
-    const { id, name, grade, classNum } = body as {
+    const { id, name, grade, classNum, pinCode } = body as {
       id: string;
       name: string;
       grade: number;
       classNum: number;
+      pinCode: string;
     };
 
-    if (!id || !name || !grade || !classNum) {
+    if (!id || !name || !grade || !classNum || !pinCode) {
       return NextResponse.json({ error: "필수 입력값이 누락되었습니다." }, { status: 400 });
     }
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     const student = await prisma.student.create({
-      data: { id, name, grade, classNum },
+      data: { id, name, grade, classNum, pinCode },
       include: { _count: { select: { submissions: true } } }
     });
 

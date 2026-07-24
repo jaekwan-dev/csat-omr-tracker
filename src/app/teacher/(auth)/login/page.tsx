@@ -36,7 +36,7 @@ export default function TeacherLoginPage() {
 
   return (
     <div style={styles.page}>
-      <div style={styles.leftPanel}>
+      <div className="login-panel-left" style={styles.leftPanel}>
         <div style={styles.leftInner}>
           <div style={styles.logoArea}>
             <div style={styles.logoIcon}>📋</div>
@@ -73,8 +73,8 @@ export default function TeacherLoginPage() {
         <div style={{ ...styles.deco, width: 200, height: 200, bottom: 40, left: -60, opacity: 0.08 }} />
       </div>
 
-      <div style={styles.rightPanel}>
-        <div className="anim-fadeInUp" style={styles.formCard}>
+      <div className="login-panel-right" style={styles.rightPanel}>
+        <div className="anim-fadeInUp login-card" style={styles.formCard}>
           <div style={styles.teacherBadge}>교사 전용</div>
           <div style={styles.formHeader}>
             <h2 style={styles.formTitle}>교사 로그인</h2>

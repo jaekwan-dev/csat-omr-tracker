@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { signJwt } from "@/lib/jwt";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { studentId, name } = body as { studentId?: string; name?: string };
+    const { studentId, name, pinCode } = body as { studentId?: string; name?: string; pinCode?: string };
 
-    if (!studentId || !name) {
+    if (!studentId || !name || !pinCode) {
       return NextResponse.json(
-        { error: "학번과 이름을 모두 입력해주세요." },
+        { error: "학번, 이름, PIN 번호를 모두 입력해주세요." },
         { status: 400 }
       );
     }
@@ -17,15 +18,15 @@ export async function POST(req: NextRequest) {
       where: { id: studentId },
     });
 
-    if (!student || student.name !== name) {
+    if (!student || student.name !== name || student.pinCode !== pinCode) {
       return NextResponse.json(
-        { error: "학번 또는 이름이 일치하지 않습니다." },
+        { error: "학번, 이름 또는 PIN 번호가 일치하지 않습니다." },
         { status: 401 }
       );
     }
 
-    // 세션 페이로드 (실제 프로덕션에서는 JWT 또는 서버 사이드 세션 사용 권장)
-    const sessionPayload = JSON.stringify({
+    // JWT 세션 페이로드
+    const token = await signJwt({
       studentId: student.id,
       name: student.name,
       grade: student.grade,
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
     });
 
     // HttpOnly 세션 쿠키 설정 (7일 만료)
-    response.cookies.set("session", sessionPayload, {
+    response.cookies.set("session", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
