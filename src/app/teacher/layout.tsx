@@ -1,15 +1,10 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getTeacherSession } from "@/lib/teacherSession";
 import TeacherLogoutButton from "./TeacherLogoutButton";
 
-export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
-  const isTeacher = await getTeacherSession();
-  if (!isTeacher) redirect("/teacher/login");
-
+// 인증 체크는 middleware.ts에서 처리
+export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ minHeight: "100vh", background: "#f0fdfa", display: "flex", flexDirection: "column" }}>
-      {/* Top Navigation */}
       <header style={styles.header}>
         <div className="container" style={styles.headerInner}>
           <div style={styles.logo}>
@@ -20,11 +15,11 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           <nav style={styles.nav}>
             <Link href="/teacher" style={styles.navLink}>📊 대시보드</Link>
             <Link href="/teacher/exams" style={styles.navLink}>✏️ 시험 관리</Link>
+            <Link href="/teacher/students" style={styles.navLink}>👥 학생 관리</Link>
           </nav>
           <TeacherLogoutButton />
         </div>
       </header>
-
       <main style={{ flex: 1 }}>{children}</main>
     </div>
   );

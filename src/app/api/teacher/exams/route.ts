@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       subject: Subject;
       title: string;
       startNum: number;
-      questions: { questionNum: number; correctAnswer: number; score: number }[];
+      questions: { questionNum: number; correctAnswer: number; score: number; isSubjective?: boolean }[];
     };
 
     if (!subject || !title || !questions?.length) {
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
             questionNum: q.questionNum,
             correctAnswer: q.correctAnswer,
             score: q.score,
+            isSubjective: q.isSubjective ?? false,
           })),
         },
       },

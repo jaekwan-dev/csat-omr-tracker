@@ -31,11 +31,12 @@ enum Subject {
 }
 
 model Question {
-  id            Int    @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   examId        Int
-  exam          Exam   @relation(fields: [examId], references: [id])
+  exam          Exam    @relation(fields: [examId], references: [id])
   questionNum   Int
-  correctAnswer Int    // 1-5
+  isSubjective  Boolean @default(false)
+  correctAnswer Int     // 객관식: 1-5, 주관식: 0-999
   score         Int
 }
 
@@ -48,4 +49,6 @@ model Submission {
   answers     Json     // {"1": 2, "2": 5, ...}
   totalScore  Int
   submittedAt DateTime @default(now())
+
+  @@unique([studentId, examId])
 }

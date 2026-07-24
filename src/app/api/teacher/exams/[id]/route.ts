@@ -16,7 +16,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const { title, questions } = body as {
       title?: string;
-      questions?: { questionNum: number; correctAnswer: number; score: number }[];
+      questions?: { questionNum: number; correctAnswer: number; score: number; isSubjective?: boolean }[];
     };
 
     await prisma.$transaction(async (tx) => {

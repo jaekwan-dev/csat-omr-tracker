@@ -13,15 +13,34 @@ interface SubmissionRow {
   percent: number; submittedAt: string;
 }
 
+interface QuestionStat {
+  questionNum: number;
+  correctAnswer: number;
+  score: number;
+  correctCount: number;
+  wrongCount: number;
+  unansweredCount: number;
+  totalSubmissions: number;
+  correctRate: number;
+  wrongRate: number;
+  unansweredRate: number;
+}
+
 interface DashboardData {
   exam: { id: number; subject: string; title: string; maxScore: number };
   avgScore: number;
   submissions: SubmissionRow[];
+  questionStats: QuestionStat[];
 }
 
 interface HistoryItem {
   examId: number; subject: string; examTitle: string;
   totalScore: number; maxScore: number; percent: number; submittedAt: string;
+  classAvgScore?: number;
+  classAvgPercent?: number;
+  overallAvgScore?: number;
+  overallAvgPercent?: number;
+  classCount?: number;
 }
 
 const SUBJECT_LABEL: Record<string, string> = { KOREAN: "국어", MATH: "수학", ENGLISH: "영어" };
@@ -33,6 +52,176 @@ const SUBJECT_GRADIENT: Record<string, string> = {
   MATH: "linear-gradient(135deg,#f97316,#7c3aed)",
   ENGLISH: "linear-gradient(135deg,#06b6d4,#3b82f6)",
 };
+
+// ── Question Stats Section ────────────────────────────────
+function QuestionStatsSection({ stats, color, gradient }: {
+  stats: QuestionStat[];
+  color: string;
+  gradient: string;
+}) {
+  const [sortBy, setSortBy] = useState<"questionNum" | "wrongRate">("wrongRate");
+  const [showAll, setShowAll] = useState(false);
+
+  if (!stats.length || stats[0].totalSubmissions === 0) {
+    return (
+      <div style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
+        제출 데이터가 없어 통계를 표시할 수 없습니다.
+      </div>
+    );
+  }
+
+  const sorted = [...stats].sort((a, b) =>
+    sortBy === "wrongRate" ? b.wrongRate - a.wrongRate : a.questionNum - b.questionNum
+  );
+  const displayed = showAll ? sorted : sorted.slice(0, 15);
+
+  // 분석 요약
+  const avgCorrectRate = Math.round(stats.reduce((s, q) => s + q.correctRate, 0) / stats.length);
+  const hardest = [...stats].sort((a, b) => a.correctRate - b.correctRate)[0];
+  const easiest = [...stats].sort((a, b) => b.correctRate - a.correctRate)[0];
+  const perfectCount = stats.filter(q => q.correctRate === 100).length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* 요약 카드 3개 */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12 }}>
+        {[
+          {
+            label: "평균 정답률",
+            value: `${avgCorrectRate}%`,
+            sub: `전체 ${stats.length}문항 평균`,
+            icon: "📊",
+            bg: "#f0f9ff",
+            vc: color,
+          },
+          {
+            label: "최다 오답 문항",
+            value: `${hardest.questionNum}번`,
+            sub: `정답률 ${hardest.correctRate}% (정답 ${hardest.correctAnswer}번)`,
+            icon: "🔴",
+            bg: "#fff5f5",
+            vc: "#dc2626",
+          },
+          {
+            label: "최고 정답 문항",
+            value: `${easiest.questionNum}번`,
+            sub: `정답률 ${easiest.correctRate}%`,
+            icon: "🟢",
+            bg: "#f0fdf4",
+            vc: "#059669",
+          },
+          {
+            label: "전원 정답 문항",
+            value: `${perfectCount}문항`,
+            sub: perfectCount > 0 ? `100% 정답률` : "없음",
+            icon: "✅",
+            bg: "#fefce8",
+            vc: "#d97706",
+          },
+        ].map((c) => (
+          <div key={c.label} style={{ background: c.bg, borderRadius: 14, padding: "16px 18px" }}>
+            <div style={{ fontSize: 20, marginBottom: 6 }}>{c.icon}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: c.vc, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+              {c.value}
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", marginTop: 4 }}>{c.label}</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{c.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 정렬 토글 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>정렬:</span>
+        {(["wrongRate", "questionNum"] as const).map((s) => (
+          <button
+            key={s}
+            onClick={() => setSortBy(s)}
+            style={{
+              padding: "6px 14px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+              cursor: "pointer", transition: "all 0.15s", fontFamily: "inherit",
+              background: sortBy === s ? gradient : "#f1f5f9",
+              color: sortBy === s ? "#fff" : "#475569",
+              border: "none",
+            }}
+          >
+            {s === "wrongRate" ? "오답률 높은 순" : "문항 번호 순"}
+          </button>
+        ))}
+      </div>
+
+      {/* 바 차트 테이블 */}
+      <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid #e2e8f0" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: gradient }}>
+              {["번호", "정답", "배점", "정답률", "오답", "미응답"].map((h) => (
+                <th key={h} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, color: "#fff", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {displayed.map((q, i) => {
+              const isHard = q.correctRate < 50;
+              const isMedium = q.correctRate >= 50 && q.correctRate < 80;
+              const rowBg = isHard ? "#fff5f5" : isMedium ? "#fffbeb" : "#fff";
+              const barColor = isHard ? "#ef4444" : isMedium ? "#f59e0b" : "#10b981";
+              return (
+                <tr key={q.questionNum} style={{ borderBottom: "1px solid #f1f5f9", background: rowBg }}>
+                  {/* 번호 */}
+                  <td style={{ padding: "10px 12px", fontWeight: 800, color: isHard ? "#dc2626" : "#374151", fontSize: 14 }}>
+                    {q.questionNum}
+                    {i === 0 && sortBy === "wrongRate" && (
+                      <span style={{ marginLeft: 6, fontSize: 11, background: "#fecaca", color: "#dc2626", borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>최다 오답</span>
+                    )}
+                  </td>
+                  {/* 정답 */}
+                  <td style={{ padding: "10px 12px" }}>
+                    <span style={{
+                      display: "inline-flex", width: 28, height: 28, borderRadius: "50%",
+                      alignItems: "center", justifyContent: "center",
+                      background: color + "22", color, fontWeight: 800, fontSize: 13,
+                    }}>{q.correctAnswer}</span>
+                  </td>
+                  {/* 배점 */}
+                  <td style={{ padding: "10px 12px", color: "#64748b", fontSize: 13 }}>{q.score}점</td>
+                  {/* 정답률 + 바 */}
+                  <td style={{ padding: "10px 12px", minWidth: 160 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ flex: 1, height: 8, background: "#e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${q.correctRate}%`, height: "100%", background: barColor, borderRadius: 4, transition: "width 0.5s ease" }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: barColor, minWidth: 36, textAlign: "right" }}>{q.correctRate}%</span>
+                    </div>
+                  </td>
+                  {/* 오답 */}
+                  <td style={{ padding: "10px 12px" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444" }}>{q.wrongCount}</span>
+                    <span style={{ fontSize: 11, color: "#94a3b8" }}>명 ({q.wrongRate}%)</span>
+                  </td>
+                  {/* 미응답 */}
+                  <td style={{ padding: "10px 12px" }}>
+                    <span style={{ fontSize: 13, color: "#94a3b8" }}>{q.unansweredCount}명</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 더 보기 */}
+      {stats.length > 15 && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          style={{ alignSelf: "center", padding: "8px 20px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer", border: `1.5px solid ${color}44`, background: "#fff", color, fontFamily: "inherit" }}
+        >
+          {showAll ? "▲ 접기" : `▼ 전체 ${stats.length}문항 보기`}
+        </button>
+      )}
+    </div>
+  );
+}
 
 // ── Simple SVG Line Chart ──────────────────────────────────
 function ScoreLineChart({ history }: { history: HistoryItem[] }) {
@@ -72,6 +261,8 @@ function ScoreLineChart({ history }: { history: HistoryItem[] }) {
         const items = bySubject[subj];
         if (items.length < 1) return null;
         const color = SUBJECT_COLOR[subj];
+        
+        // 개인 점수 좌표
         const pts = items.map((item, i) => {
           const x = pad.left + (i / Math.max(items.length - 1, 1)) * inner.w;
           const y = pad.top + inner.h - (item.percent / 100) * inner.h;
@@ -79,15 +270,33 @@ function ScoreLineChart({ history }: { history: HistoryItem[] }) {
         });
         const pathD = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
 
+        // 학급 평균 점수 좌표 (점선)
+        const avgPts = items.map((item, i) => {
+          const x = pad.left + (i / Math.max(items.length - 1, 1)) * inner.w;
+          const y = pad.top + inner.h - ((item.classAvgPercent ?? 0) / 100) * inner.h;
+          return { x, y, item };
+        });
+        const avgPathD = avgPts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+
         return (
           <g key={subj}>
+            {/* 학급 평균선 (점선) */}
+            <path d={avgPathD} fill="none" stroke={`${color}66`} strokeWidth={2} strokeDasharray="4 4" strokeLinecap="round" strokeLinejoin="round" />
+            
+            {/* 개인 점수선 (실선) */}
             <path d={pathD} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            
+            {/* 개인 점수 마커 */}
             {pts.map((p, i) => (
               <g key={i}>
                 <circle cx={p.x} cy={p.y} r={5} fill={color} />
                 <text x={p.x} y={p.y - 10} fontSize={10} textAnchor="middle" fill={color} fontWeight="700">
                   {p.item.totalScore}
                 </text>
+                
+                {/* 학급 평균 마커 (선택 사항: hover 시 툴팁으로 표시하는 것이 좋지만 여기서는 작은 텍스트로 추가 가능) */}
+                <circle cx={avgPts[i].x} cy={avgPts[i].y} r={3} fill={`${color}88`} />
+                
                 {/* X label (first subject only) */}
                 {subj === "ENGLISH" && (
                   <text x={p.x} y={H - 6} fontSize={10} textAnchor="middle" fill="#475569">
@@ -106,13 +315,20 @@ function ScoreLineChart({ history }: { history: HistoryItem[] }) {
 // ── Legend for chart ──────────────────────────────────────
 function ChartLegend() {
   return (
-    <div style={{ display: "flex", gap: 16, padding: "8px 0" }}>
-      {(["KOREAN", "MATH", "ENGLISH"] as const).map((s) => (
-        <div key={s} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 16, height: 3, background: SUBJECT_COLOR[s], borderRadius: 2 }} />
-          <span style={{ fontSize: 12, color: "#475569" }}>{SUBJECT_LABEL[s]}</span>
-        </div>
-      ))}
+    <div style={{ display: "flex", gap: 16, padding: "8px 0", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 16 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>학생 점수:</span>
+        {(["KOREAN", "MATH", "ENGLISH"] as const).map((s) => (
+          <div key={s} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 16, height: 3, background: SUBJECT_COLOR[s], borderRadius: 2 }} />
+            <span style={{ fontSize: 12, color: "#475569" }}>{SUBJECT_LABEL[s]}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, paddingLeft: 8, borderLeft: "1px solid #e2e8f0" }}>
+        <div style={{ width: 16, borderTop: "2px dashed #94a3b8" }} />
+        <span style={{ fontSize: 12, color: "#64748b" }}>학급 평균 (점선)</span>
+      </div>
     </div>
   );
 }
@@ -399,6 +615,28 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* 문항별 오답률 통계 */}
+      {data && !loading && data.questionStats?.length > 0 && (
+        <div style={styles.tableCard}>
+          <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>📉</span>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>문항별 오답률 통계</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
+                🟥 정답률 50% 미만 &nbsp;|&nbsp; 🟨 50~79% &nbsp;|&nbsp; 🟩 80% 이상
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: "20px" }}>
+            <QuestionStatsSection
+              stats={data.questionStats}
+              color={subjectColor}
+              gradient={subjectGradient}
+            />
+          </div>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import LogoutButton from "./LogoutButton";
+import BottomNav from "@/components/BottomNav";
 
 const SUBJECT_META = {
   KOREAN: {
@@ -151,20 +152,7 @@ export default async function MainPage() {
       </main>
 
       {/* Bottom Nav */}
-      <nav style={styles.bottomNav}>
-        <button style={{ ...styles.navItem, ...styles.navItemActive }}>
-          <span style={styles.navIcon}>🏠</span>
-          <span style={styles.navLabel}>홈</span>
-        </button>
-        <button style={styles.navItem}>
-          <span style={styles.navIcon}>👤</span>
-          <span style={styles.navLabel}>내 정보</span>
-        </button>
-        <button style={styles.navItem}>
-          <span style={styles.navIcon}>⚙️</span>
-          <span style={styles.navLabel}>설정</span>
-        </button>
-      </nav>
+      <BottomNav />
     </div>
   );
 }
@@ -366,42 +354,5 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 22,
     color: "rgba(255,255,255,0.85)",
     fontWeight: 300,
-  },
-  bottomNav: {
-    position: "fixed",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 50,
-    background: "rgba(255,255,255,0.95)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    borderTop: "1px solid #e2e8f0",
-    display: "flex",
-    justifyContent: "space-around",
-    padding: "12px 0 20px",
-  },
-  navItem: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 4,
-    cursor: "pointer",
-    background: "none",
-    border: "none",
-    padding: "4px 24px",
-    borderRadius: 12,
-    transition: "all 0.15s",
-  },
-  navItemActive: {
-    background: "#eff6ff",
-  },
-  navIcon: {
-    fontSize: 22,
-  },
-  navLabel: {
-    fontSize: 11,
-    fontWeight: 600,
-    color: "#94a3b8",
   },
 };

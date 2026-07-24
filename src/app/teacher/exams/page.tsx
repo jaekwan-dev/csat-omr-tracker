@@ -11,7 +11,7 @@ const SUBJECT_GRADIENT: Record<string, string> = {
 };
 const SUBJECT_COLOR: Record<string, string> = { KOREAN: "#764ba2", MATH: "#f97316", ENGLISH: "#3b82f6" };
 
-interface Question { questionNum: number; correctAnswer: number; score: number }
+interface Question { questionNum: number; correctAnswer: number; score: number; isSubjective: boolean; }
 interface Exam {
   id: number; subject: string; title: string;
   totalQuestions: number; startNum: number;
@@ -184,9 +184,10 @@ export default function ExamManagementPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead style={{ position: "sticky", top: 0, background: "#f8faff" }}>
                   <tr>
-                    <th style={styles.editTh}>번호</th>
-                    <th style={styles.editTh}>정답 (1-5)</th>
-                    <th style={styles.editTh}>배점</th>
+                    <th style={{ ...styles.editTh, width: 50 }}>번호</th>
+                    {editingExam.subject === "MATH" && <th style={{ ...styles.editTh, width: 70 }}>유형</th>}
+                    <th style={styles.editTh}>정답 입력</th>
+                    <th style={{ ...styles.editTh, width: 70 }}>배점</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -195,28 +196,73 @@ export default function ExamManagementPage() {
                       <td style={styles.editTd}>
                         <span style={{ fontWeight: 700, color: "#374151" }}>{q.questionNum}</span>
                       </td>
+                      {editingExam.subject === "MATH" && (
+                        <td style={styles.editTd}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nxt = [...editQuestions];
+                              const isSubj = !nxt[i].isSubjective;
+                              nxt[i] = {
+                                ...nxt[i],
+                                isSubjective: isSubj,
+                                correctAnswer: isSubj ? 0 : 1,
+                              };
+                              setEditQuestions(nxt);
+                            }}
+                            style={{
+                              padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                              cursor: "pointer", border: "1px solid #e2e8f0",
+                              background: q.isSubjective ? "#f1f5f9" : "#fff",
+                              color: q.isSubjective ? "#475569" : "#0f172a",
+                            }}
+                          >
+                            {q.isSubjective ? "✏️ 단답" : "⭕ 객관"}
+                          </button>
+                        </td>
+                      )}
                       <td style={styles.editTd}>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          {[1, 2, 3, 4, 5].map((c) => (
-                            <button
-                              key={c}
-                              onClick={() => {
-                                const nxt = [...editQuestions];
-                                nxt[i] = { ...nxt[i], correctAnswer: c };
-                                setEditQuestions(nxt);
-                              }}
-                              style={{
-                                width: 34, height: 34, borderRadius: "50%", fontSize: 13, fontWeight: 700,
-                                border: q.correctAnswer === c ? "none" : "1.5px solid #e2e8f0",
-                                background: q.correctAnswer === c ? SUBJECT_COLOR[editingExam.subject] : "#fff",
-                                color: q.correctAnswer === c ? "#fff" : "#475569",
-                                cursor: "pointer", transition: "all 0.12s",
-                              }}
-                            >
-                              {c}
-                            </button>
-                          ))}
-                        </div>
+                        {q.isSubjective ? (
+                          <input
+                            type="number" min={0} max={999}
+                            value={q.correctAnswer}
+                            onChange={(e) => {
+                              const nxt = [...editQuestions];
+                              nxt[i] = { ...nxt[i], correctAnswer: Number(e.target.value) };
+                              setEditQuestions(nxt);
+                            }}
+                            style={{
+                              width: 80, padding: "8px 12px",
+                              borderRadius: 10, border: "2px solid #e2e8f0",
+                              fontSize: 14, fontWeight: 800, textAlign: "center",
+                              fontFamily: "inherit", color: "#0f172a",
+                              background: "#f8fafc",
+                            }}
+                            placeholder="정답"
+                          />
+                        ) : (
+                          <div style={{ display: "flex", gap: 6 }}>
+                            {[1, 2, 3, 4, 5].map((c) => (
+                              <button
+                                key={c}
+                                onClick={() => {
+                                  const nxt = [...editQuestions];
+                                  nxt[i] = { ...nxt[i], correctAnswer: c };
+                                  setEditQuestions(nxt);
+                                }}
+                                style={{
+                                  width: 34, height: 34, borderRadius: "50%", fontSize: 13, fontWeight: 700,
+                                  border: q.correctAnswer === c ? "none" : "1.5px solid #e2e8f0",
+                                  background: q.correctAnswer === c ? SUBJECT_COLOR[editingExam.subject] : "#fff",
+                                  color: q.correctAnswer === c ? "#fff" : "#475569",
+                                  cursor: "pointer", transition: "all 0.12s",
+                                }}
+                              >
+                                {c}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </td>
                       <td style={styles.editTd}>
                         <input

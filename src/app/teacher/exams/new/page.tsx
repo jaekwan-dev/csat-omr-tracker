@@ -16,7 +16,7 @@ const SUBJECT_GRADIENT: Record<string, string> = {
   ENGLISH: "linear-gradient(135deg,#06b6d4,#3b82f6)",
 };
 
-interface QuestionInput { questionNum: number; correctAnswer: number; score: number }
+interface QuestionInput { questionNum: number; correctAnswer: number; score: number; isSubjective: boolean; }
 
 function buildQuestions(subject: string): QuestionInput[] {
   const def = SUBJECT_DEFAULTS[subject];
@@ -25,6 +25,7 @@ function buildQuestions(subject: string): QuestionInput[] {
     questionNum: def.startNum + i,
     correctAnswer: 1,
     score: 2,
+    isSubjective: false,
   }));
 }
 
@@ -61,11 +62,27 @@ export default function NewExamPage() {
     setQuestions((prev) => prev.map((q) => ({ ...q, score })));
   }
 
+  function toggleSubjective(idx: number) {
+    setQuestions((prev) => {
+      const n = [...prev];
+      const isSubj = !n[idx].isSubjective;
+      n[idx] = { 
+        ...n[idx], 
+        isSubjective: isSubj,
+        correctAnswer: isSubj ? 0 : 1 // 주관식이면 0으로, 객관식이면 1로 초기화
+      };
+      return n;
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setError("시험 제목을 입력하세요."); return; }
-    if (questions.some((q) => q.correctAnswer < 1 || q.correctAnswer > 5)) {
-      setError("모든 문항의 정답을 1~5 사이로 입력하세요."); return;
+    if (questions.some((q) => !q.isSubjective && (q.correctAnswer < 1 || q.correctAnswer > 5))) {
+      setError("객관식 문항의 정답을 1~5 사이로 입력하세요."); return;
+    }
+    if (questions.some((q) => q.isSubjective && (q.correctAnswer < 0 || q.correctAnswer > 999))) {
+      setError("주관식 문항의 정답은 0~999 사이로 입력하세요."); return;
     }
     setError("");
     setSubmitting(true);
@@ -170,9 +187,10 @@ export default function NewExamPage() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead style={{ background: gradient }}>
                 <tr>
-                  <th style={{ ...styles.th, color: "#fff" }}>번호</th>
-                  <th style={{ ...styles.th, color: "#fff" }}>정답 선택</th>
-                  <th style={{ ...styles.th, color: "#fff" }}>배점</th>
+                  <th style={{ ...styles.th, color: "#fff", width: 60 }}>번호</th>
+                  {subject === "MATH" && <th style={{ ...styles.th, color: "#fff", width: 80 }}>유형</th>}
+                  <th style={{ ...styles.th, color: "#fff" }}>정답 입력</th>
+                  <th style={{ ...styles.th, color: "#fff", width: 80 }}>배점</th>
                 </tr>
               </thead>
               <tbody>
@@ -181,28 +199,60 @@ export default function NewExamPage() {
                     <td style={{ ...styles.td, fontWeight: 700, color: "#374151", width: 60 }}>
                       {q.questionNum}
                     </td>
+                    {subject === "MATH" && (
+                      <td style={styles.td}>
+                        <button
+                          type="button"
+                          onClick={() => toggleSubjective(i)}
+                          style={{
+                            padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                            cursor: "pointer", border: "1px solid #e2e8f0",
+                            background: q.isSubjective ? "#f1f5f9" : "#fff",
+                            color: q.isSubjective ? "#475569" : "#0f172a",
+                          }}
+                        >
+                          {q.isSubjective ? "✏️ 단답" : "⭕ 객관"}
+                        </button>
+                      </td>
+                    )}
                     <td style={styles.td}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        {[1, 2, 3, 4, 5].map((c) => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setAnswer(i, c)}
-                            style={{
-                              width: 36, height: 36, borderRadius: "50%",
-                              border: q.correctAnswer === c ? "none" : "1.5px solid #e2e8f0",
-                              background: q.correctAnswer === c ? color : "#fff",
-                              color: q.correctAnswer === c ? "#fff" : "#64748b",
-                              fontWeight: 700, fontSize: 14,
-                              cursor: "pointer", transition: "all 0.12s",
-                              boxShadow: q.correctAnswer === c ? `0 2px 8px ${color}55` : "none",
-                              transform: q.correctAnswer === c ? "scale(1.1)" : "scale(1)",
-                            }}
-                          >
-                            {c}
-                          </button>
-                        ))}
-                      </div>
+                      {q.isSubjective ? (
+                        <input
+                          type="number" min={0} max={999}
+                          value={q.correctAnswer}
+                          onChange={(e) => setAnswer(i, Number(e.target.value))}
+                          style={{
+                            width: 80, padding: "8px 12px",
+                            borderRadius: 10, border: "2px solid #e2e8f0",
+                            fontSize: 14, fontWeight: 800, textAlign: "center",
+                            fontFamily: "inherit", color: "#0f172a",
+                            background: "#f8fafc",
+                          }}
+                          placeholder="정답"
+                        />
+                      ) : (
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {[1, 2, 3, 4, 5].map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setAnswer(i, c)}
+                              style={{
+                                width: 36, height: 36, borderRadius: "50%",
+                                border: q.correctAnswer === c ? "none" : "1.5px solid #e2e8f0",
+                                background: q.correctAnswer === c ? color : "#fff",
+                                color: q.correctAnswer === c ? "#fff" : "#64748b",
+                                fontWeight: 700, fontSize: 14,
+                                cursor: "pointer", transition: "all 0.12s",
+                                boxShadow: q.correctAnswer === c ? `0 2px 8px ${color}55` : "none",
+                                transform: q.correctAnswer === c ? "scale(1.1)" : "scale(1)",
+                              }}
+                            >
+                              {c}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td style={styles.td}>
                       <input

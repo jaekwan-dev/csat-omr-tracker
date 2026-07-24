@@ -7,6 +7,7 @@ import type { SessionUser } from "@/lib/session";
 interface Question {
   questionNum: number;
   score: number;
+  isSubjective: boolean;
 }
 
 interface Exam {
@@ -233,23 +234,53 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
                     }}>
                       {q.questionNum}
                     </td>
-                    {/* Choice buttons 1-5 */}
-                    {[1, 2, 3, 4, 5].map((choice) => (
-                      <td key={choice} style={{ padding: "7px 4px" }}>
-                        <button
-                          className={`omr-circle${selected === choice ? " selected" : ""}`}
-                          onClick={() => selectAnswer(q.questionNum, choice)}
-                          aria-label={`${q.questionNum}번 ${choice}번 선택`}
-                          aria-pressed={selected === choice}
-                          style={selected === choice
-                            ? { background: color, borderColor: color }
-                            : undefined
-                          }
-                        >
-                          {choice}
-                        </button>
+                    {/* Choice buttons or Subjective input */}
+                    {q.isSubjective ? (
+                      <td colSpan={5} style={{ padding: "7px 12px" }}>
+                        <input
+                          type="number" min={0} max={999}
+                          value={selected !== undefined ? selected : ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "") {
+                              // 미입력 처리 (삭제)
+                              setAnswers((prev) => {
+                                const next = { ...prev };
+                                delete next[q.questionNum];
+                                return next;
+                              });
+                            } else {
+                              selectAnswer(q.questionNum, Number(val));
+                            }
+                          }}
+                          placeholder="주관식 정답 입력"
+                          style={{
+                            width: "100%", padding: "8px 12px", borderRadius: 8,
+                            border: `2px solid ${selected !== undefined ? color : "#e2e8f0"}`,
+                            fontSize: 16, fontWeight: 700, color: "#0f172a", textAlign: "center",
+                            background: selected !== undefined ? `${color}11` : "#f8fafc",
+                            outline: "none", transition: "all 0.2s"
+                          }}
+                        />
                       </td>
-                    ))}
+                    ) : (
+                      [1, 2, 3, 4, 5].map((choice) => (
+                        <td key={choice} style={{ padding: "7px 4px" }}>
+                          <button
+                            className={`omr-circle${selected === choice ? " selected" : ""}`}
+                            onClick={() => selectAnswer(q.questionNum, choice)}
+                            aria-label={`${q.questionNum}번 ${choice}번 선택`}
+                            aria-pressed={selected === choice}
+                            style={selected === choice
+                              ? { background: color, borderColor: color }
+                              : undefined
+                            }
+                          >
+                            {choice}
+                          </button>
+                        </td>
+                      ))
+                    )}
                     {/* Score */}
                     <td style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>
                       {q.score}점

@@ -41,7 +41,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. 자동 채점
+    // 4. 중복 제출 체크
+    const existingSubmission = await prisma.submission.findFirst({
+      where: { examId, studentId: session.studentId },
+    });
+    if (existingSubmission) {
+      return NextResponse.json(
+        { error: "이미 이 시험을 제출했습니다." },
+        { status: 409 }
+      );
+    }
+
+    // 5. 자동 채점
     let totalScore = 0;
     const results = exam.questions.map((q) => {
       const myAnswer = answers[String(q.questionNum)] ?? 0;
@@ -59,7 +70,7 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    // 5. Submission DB 저장
+    // 6. Submission DB 저장
     const submission = await prisma.submission.create({
       data: {
         studentId: session.studentId,
