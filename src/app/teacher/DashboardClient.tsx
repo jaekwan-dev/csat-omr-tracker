@@ -55,15 +55,13 @@ const SUBJECT_GRADIENT: Record<string, string> = {
 };
 
 // ── Question Stats Section ────────────────────────────────
-function QuestionStatsSection({ stats, color, gradient }: {
-  stats: QuestionStat[];
-  color: string;
-  gradient: string;
-}) {
+function QuestionStatsSection({ stats = [], color, gradient }: { stats?: QuestionStat[]; color: string; gradient: string }) {
   const [sortBy, setSortBy] = useState<"questionNum" | "wrongRate">("wrongRate");
   const [showAll, setShowAll] = useState(false);
 
-  if (!stats.length || stats[0].totalSubmissions === 0) {
+  const safeStats = Array.isArray(stats) ? stats : [];
+
+  if (safeStats.length === 0 || !safeStats[0] || safeStats[0].totalSubmissions === 0) {
     return (
       <div style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
         제출 데이터가 없어 통계를 표시할 수 없습니다.
@@ -71,15 +69,15 @@ function QuestionStatsSection({ stats, color, gradient }: {
     );
   }
 
-  const sorted = [...stats].sort((a, b) =>
+  const sorted = [...safeStats].sort((a, b) =>
     sortBy === "wrongRate" ? b.wrongRate - a.wrongRate : a.questionNum - b.questionNum
   );
   const displayed = showAll ? sorted : sorted.slice(0, 15);
 
-  const avgCorrectRate = Math.round(stats.reduce((s, q) => s + q.correctRate, 0) / stats.length);
-  const hardest = [...stats].sort((a, b) => a.correctRate - b.correctRate)[0];
-  const easiest = [...stats].sort((a, b) => b.correctRate - a.correctRate)[0];
-  const perfectCount = stats.filter(q => q.correctRate === 100).length;
+  const avgCorrectRate = Math.round(safeStats.reduce((s, q) => s + q.correctRate, 0) / safeStats.length);
+  const hardest = [...safeStats].sort((a, b) => a.correctRate - b.correctRate)[0];
+  const easiest = [...safeStats].sort((a, b) => b.correctRate - a.correctRate)[0];
+  const perfectCount = safeStats.filter(q => q.correctRate === 100).length;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -180,8 +178,9 @@ function QuestionStatsSection({ stats, color, gradient }: {
 }
 
 // ── Simple SVG Line Chart ──────────────────────────────────
-function ScoreLineChart({ history }: { history: HistoryItem[] }) {
-  if (history.length < 2) {
+function ScoreLineChart({ history }: { history?: HistoryItem[] }) {
+  const safeHistory = Array.isArray(history) ? history : [];
+  if (safeHistory.length < 2) {
     return (
       <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
         최소 2개 이상의 시험 제출 이력이 있어야 그래프가 표시됩니다.
@@ -195,7 +194,7 @@ function ScoreLineChart({ history }: { history: HistoryItem[] }) {
 
   const subjects = ["KOREAN", "MATH", "ENGLISH"] as const;
   const bySubject: Record<string, HistoryItem[]> = { KOREAN: [], MATH: [], ENGLISH: [] };
-  history.forEach((h) => { if (bySubject[h.subject]) bySubject[h.subject].push(h); });
+  safeHistory.forEach((h) => { if (bySubject[h.subject]) bySubject[h.subject].push(h); });
 
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: "visible" }}>
@@ -302,7 +301,7 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
   }
 
   const classStats = useMemo(() => {
-    if (!data) return { counts: {} as Record<number, number>, total: 0 };
+    if (!data || !Array.isArray(data?.submissions)) return { counts: {} as Record<number, number>, total: 0 };
     const counts: Record<number, number> = {};
     data.submissions.forEach((s) => {
       counts[s.classNum] = (counts[s.classNum] || 0) + 1;
@@ -311,12 +310,12 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
   }, [data]);
 
   const classNumbers = useMemo(() => {
-    if (!data) return [];
+    if (!data || !Array.isArray(data?.submissions)) return [];
     return [...new Set(data.submissions.map((s) => s.classNum))].sort((a, b) => a - b);
   }, [data]);
 
   const rows = useMemo(() => {
-    if (!data) return [];
+    if (!data || !Array.isArray(data?.submissions)) return [];
     let list = filterClass !== null ? data.submissions.filter((s) => s.classNum === filterClass) : data.submissions;
     list = [...list].sort((a, b) => {
       let va: number | string = 0, vb: number | string = 0;

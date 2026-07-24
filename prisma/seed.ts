@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { PrismaClient, Subject } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -8,58 +7,60 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("🌱 Seeding database with rich sample data...");
 
-  // 1. 기존 데이터 초기화 (Clean up)
-  await prisma.submission.deleteMany({});
-  await prisma.question.deleteMany({});
-  await prisma.exam.deleteMany({});
-  await prisma.student.deleteMany({});
+  // 1. 기존 데이터 초기화 (종속성 역순 삭제)
+  await prisma.submission.deleteMany();
+  await prisma.question.deleteMany();
+  await prisma.exam.deleteMany();
+  await prisma.student.deleteMany();
 
   console.log("Cleared existing database records.");
 
-  // 2. 학생 데이터 생성 (10명, 다양한 학년 및 반)
-  const students = [
-    { id: "1101", name: "김철수", grade: 1, classNum: 1, pinCode: "1234" },
-    { id: "1102", name: "이영희", grade: 1, classNum: 1, pinCode: "1234" },
-    { id: "1103", name: "정우성", grade: 1, classNum: 1, pinCode: "1234" },
-    { id: "1104", name: "한지민", grade: 1, classNum: 1, pinCode: "1234" },
-    { id: "1201", name: "박민수", grade: 1, classNum: 2, pinCode: "1234" },
-    { id: "1202", name: "김태희", grade: 1, classNum: 2, pinCode: "1234" },
-    { id: "1203", name: "송중기", grade: 1, classNum: 2, pinCode: "1234" },
-    { id: "2101", name: "최지우", grade: 2, classNum: 1, pinCode: "1234" },
-    { id: "2102", name: "이병헌", grade: 2, classNum: 1, pinCode: "1234" },
-    { id: "2103", name: "손예진", grade: 2, classNum: 1, pinCode: "1234" },
+  // 2. 샘플 학생 생성 (10명)
+  const sampleStudents = [
+    { id: "1101", name: "김철수", pinCode: "1234", grade: 1, classNum: 1 },
+    { id: "1102", name: "이영희", pinCode: "1234", grade: 1, classNum: 1 },
+    { id: "1103", name: "홍길동", pinCode: "1234", grade: 1, classNum: 1 },
+    { id: "1201", name: "박민수", pinCode: "1234", grade: 1, classNum: 2 },
+    { id: "1202", name: "정수진", pinCode: "1234", grade: 1, classNum: 2 },
+    { id: "2101", name: "최지우", pinCode: "1234", grade: 2, classNum: 1 },
+    { id: "2102", name: "강하늘", pinCode: "1234", grade: 2, classNum: 1 },
+    { id: "2201", name: "윤아름", pinCode: "1234", grade: 2, classNum: 2 },
+    { id: "3101", name: "장서준", pinCode: "1234", grade: 3, classNum: 1 },
+    { id: "3102", name: "한지민", pinCode: "1234", grade: 3, classNum: 1 },
   ];
 
-  for (const student of students) {
-    await prisma.student.create({ data: student });
-  }
+  const students = await Promise.all(
+    sampleStudents.map((s) => prisma.student.create({ data: s }))
+  );
   console.log(`Created ${students.length} sample students.`);
 
-  // 3. 과목별 5개씩 시험 생성 (앞의 3개는 응시 완료, 뒤의 2개는 미응시 신규 시험)
+  // 3. 샘플 시험 및 문항 생성 (15개 시험: 과목별 제출완료 3개 + 과목별 미응시 2개)
   const examSpecs = [
-    // 국어 (1~30번) - 3개 응시 / 2개 미응시
-    { subject: Subject.KOREAN, title: "1회차 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: true },
-    { subject: Subject.KOREAN, title: "2회차 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: true },
-    { subject: Subject.KOREAN, title: "3회차 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: true },
-    { subject: Subject.KOREAN, title: "4회차 실전 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: false },
-    { subject: Subject.KOREAN, title: "5회차 파이널 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: false },
+    // 국어 (1~30번, 30문항) - 제출 완료 3개
+    { subject: Subject.KOREAN, title: "국어 1회차 기초 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: true },
+    { subject: Subject.KOREAN, title: "국어 2회차 심화 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: true },
+    { subject: Subject.KOREAN, title: "국어 3회차 고난도 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: true },
+    // 국어 - 미응시 신규 2개
+    { subject: Subject.KOREAN, title: "국어 4회차 실전 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: false },
+    { subject: Subject.KOREAN, title: "국어 5회차 파이널 모의고사", totalQuestions: 30, startNum: 1, isSubmitted: false },
 
-    // 수학 (1~20번) - 3개 응시 / 2개 미응시
-    { subject: Subject.MATH, title: "1회차 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: true },
-    { subject: Subject.MATH, title: "2회차 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: true },
-    { subject: Subject.MATH, title: "3회차 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: true },
-    { subject: Subject.MATH, title: "4회차 실전 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: false },
-    { subject: Subject.MATH, title: "5회차 파이널 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: false },
+    // 수학 (1~20번, 20문항, 전문항 객관식 1~5번) - 제출 완료 3개
+    { subject: Subject.MATH, title: "수학 1회차 기초 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: true },
+    { subject: Subject.MATH, title: "수학 2회차 심화 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: true },
+    { subject: Subject.MATH, title: "수학 3회차 고난도 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: true },
+    // 수학 - 미응시 신규 2개
+    { subject: Subject.MATH, title: "수학 4회차 실전 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: false },
+    { subject: Subject.MATH, title: "수학 5회차 파이널 모의고사", totalQuestions: 20, startNum: 1, isSubmitted: false },
 
-    // 영어 (18~45번) - 3개 응시 / 2개 미응시
-    { subject: Subject.ENGLISH, title: "1회차 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: true },
-    { subject: Subject.ENGLISH, title: "2회차 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: true },
-    { subject: Subject.ENGLISH, title: "2024년 6월 기출", totalQuestions: 28, startNum: 18, isSubmitted: true },
-    { subject: Subject.ENGLISH, title: "3회차 실전 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: false },
-    { subject: Subject.ENGLISH, title: "4회차 파이널 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: false },
+    // 영어 (18~45번, 28문항) - 제출 완료 2개
+    { subject: Subject.ENGLISH, title: "영어 1회차 실전 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: true },
+    { subject: Subject.ENGLISH, title: "영어 2회차 고난도 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: true },
+    // 영어 - 미응시 신규 2개
+    { subject: Subject.ENGLISH, title: "영어 3회차 실전 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: false },
+    { subject: Subject.ENGLISH, title: "영어 4회차 파이널 모의고사", totalQuestions: 28, startNum: 18, isSubmitted: false },
   ];
 
-  const createdExams = [];
+  const createdExams: Array<{ id: number; subject: Subject; title: string; questions: any[]; isSubmitted: boolean }> = [];
 
   for (const spec of examSpecs) {
     const exam = await prisma.exam.create({
@@ -73,14 +74,12 @@ async function main() {
 
     const questions = Array.from({ length: spec.totalQuestions }, (_, i) => {
       const qNum = spec.startNum + i;
-      const isSubjective = spec.subject === Subject.MATH && qNum >= 16; // 수학 16번 이상 주관식
-      const correctAnswer = isSubjective
-        ? (qNum * 7) % 100 // 주관식 정답 (예: 12, 19, 26...)
-        : ((qNum + (spec.title.charCodeAt(0) || 0)) % 5) + 1; // 1~5 객관식
+      const isSubjective = false; // 모두 객관식 1~5번
+      const correctAnswer = ((qNum + (spec.title.charCodeAt(0) || 0)) % 5) + 1; // 1~5 객관식 정답
 
       let score = 3;
       if (spec.subject === Subject.KOREAN) score = i < 20 ? 3 : 4;
-      else if (spec.subject === Subject.MATH) score = isSubjective ? 6 : 4;
+      else if (spec.subject === Subject.MATH) score = 5; // 20문항 * 5점 = 100점
       else if (spec.subject === Subject.ENGLISH) score = i % 2 === 0 ? 3 : 4;
 
       return {
@@ -102,7 +101,7 @@ async function main() {
 
   console.log(`Created ${createdExams.length} exams (including 6 new unsubmitted exams).`);
 
-  // 4. 제출 데이터 샘플 생성 (isSubmitted가 true인 기존 9개 시험만 제출 이력 생성)
+  // 4. 제출 데이터 샘플 생성 (isSubmitted가 true인 시험만 제출 이력 생성)
   const baseDates = [
     new Date("2026-07-03T10:00:00Z"),
     new Date("2026-07-10T14:30:00Z"),
@@ -144,11 +143,7 @@ async function main() {
           answers[String(q.questionNum)] = q.correctAnswer;
           totalScore += q.score;
         } else {
-          if (q.isSubjective) {
-            answers[String(q.questionNum)] = (q.correctAnswer + 5) % 100;
-          } else {
-            answers[String(q.questionNum)] = (q.correctAnswer % 5) + 1;
-          }
+          answers[String(q.questionNum)] = (q.correctAnswer % 5) + 1;
         }
       }
 
@@ -172,7 +167,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Seed Error:", e);
     process.exit(1);
   })
   .finally(async () => {

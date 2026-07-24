@@ -90,16 +90,9 @@ export default function StudentHomeClient({
       <main className="container" style={styles.main}>
         {/* Hero Section */}
         <div className="anim-fadeInUp" style={styles.hero}>
-          <div style={styles.heroBadge}>
-            <span style={styles.heroBadgeDot} />
-            응시 가능 시험 목록
-          </div>
           <h1 style={styles.heroTitle}>
             응시할 시험을 선택하세요
           </h1>
-          <p style={styles.heroSub}>
-            {session.name} 학생 ({session.grade}학년 {session.classNum}반) · 미제출 시험 <strong>{unsubmittedExams.length}</strong>건
-          </p>
         </div>
 
         {/* 상단 과목 필터바 (스크롤 0% 3열 균등 그리드 & 검색창) */}
