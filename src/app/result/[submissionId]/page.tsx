@@ -204,9 +204,6 @@ export default async function ResultPage({ params }: PageProps) {
 
         {/* Actions */}
         <div className="anim-fadeInUp" style={styles.actions}>
-          <Link href={`/exam/${submission.examId}`} className="btn btn-ghost">
-            ↩️ 다시 풀기
-          </Link>
           <Link href="/" className="btn btn-primary">
             🏠 홈으로
           </Link>
