@@ -122,7 +122,7 @@ function QuestionStatsSection({ stats = [], color, gradient }: { stats?: Questio
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: gradient }}>
-              {["번호", "정답", "배점", "정답률", "오답", "미응답"].map((h) => (
+              {["번호", "정답", "배점", "정답률", "오답"].map((h) => (
                 <th key={h} style={{ padding: "10px 12px", fontSize: 12, fontWeight: 700, color: "#fff", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
@@ -157,7 +157,6 @@ function QuestionStatsSection({ stats = [], color, gradient }: { stats?: Questio
                   <td style={{ padding: "10px 12px", fontSize: 12 }}>
                     <span style={{ fontWeight: 700, color: "#ef4444" }}>{q.wrongCount}명</span>
                   </td>
-                  <td style={{ padding: "10px 12px", fontSize: 12, color: "#94a3b8" }}>{q.unansweredCount}명</td>
                 </tr>
               );
             })}
@@ -341,12 +340,6 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
   return (
     <div className="container" style={{ paddingTop: 24, paddingBottom: 80 }}>
       {/* Header Block */}
-      <div style={styles.pageHeader}>
-        <div>
-          <h1 style={styles.pageTitle}>성적 대시보드</h1>
-          <p style={styles.pageSubtitle}>과목과 시험을 선택하여 반별 성적과 오답률을 조회하세요.</p>
-        </div>
-      </div>
 
       {/* Grid Control Center */}
       <div style={styles.smartFilterCard}>
@@ -410,15 +403,14 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                    <span style={{ ...styles.subjectTagChip, color, background: `${color}18` }}>{emoji} {SUBJECT_LABEL[exam.subject]}</span>
                     {isSelected && <span style={{ fontSize: 11, color, fontWeight: 900 }}>✓ 선택됨</span>}
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 900, color: "#0f172a", marginBottom: 6 }}>
                     {exam.title}
                   </div>
-                  <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>
+                  {/* <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>
                     총 {exam.totalQuestions}문항
-                  </div>
+                  </div> */}
                 </button>
               );
             })}
@@ -458,7 +450,7 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
       {data && !loading && (
         <div style={{ ...styles.kpiGrid, borderLeft: `4px solid ${subjectColor}` }}>
           {[
-            { label: "선택 시험", value: `${SUBJECT_LABEL[data.exam.subject]} ${data.exam.title}` },
+            { label: "선택 시험", value: `${data.exam.title}` },
             { label: "총 응시자", value: `${rows.length}명` },
             { label: "평균 점수", value: `${data.avgScore}점`, isAccent: true },
             { label: "최고 점수", value: `${rows[0]?.totalScore ?? 0}점` },
@@ -515,7 +507,6 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
           <div className="mobile-dashboard-results" style={styles.mobileResultList}>
             {rows.map((row) => {
               const isSelected = selectedStudentId === row.studentId;
-              const medal = row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : null;
 
               return (
                 <div
@@ -529,8 +520,8 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
                 >
                   <div style={styles.resultCardHeader}>
                     {/* Rank */}
-                    <div style={{ ...styles.rankCircle, background: row.rank === 1 ? "#fef9c3" : "#f1f5f9", color: row.rank === 1 ? "#d97706" : "#334155" }}>
-                      {medal || `${row.rank}위`}
+                    <div style={{ ...styles.rankCircle, background: "#f1f5f9", color: "#334155" }}>
+                      {row.rank}위
                     </div>
 
                     {/* Student Info */}
@@ -615,7 +606,7 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
                         onClick={() => handleStudentClick(row.studentId, row.studentName)}
                         style={{
                           ...styles.tr,
-                          background: isSelected ? `${subjectColor}12` : row.rank === 1 ? "#fffbeb" : "#fff",
+                          background: isSelected ? `${subjectColor}12` : "#fff",
                           borderLeft: isSelected ? `3px solid ${subjectColor}` : "3px solid transparent",
                         }}
                       >
@@ -623,10 +614,10 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
                           <span style={{
                             display: "inline-flex", alignItems: "center", justifyContent: "center",
                             width: 28, height: 28, borderRadius: "50%", fontSize: 13, fontWeight: 800,
-                            background: row.rank === 1 ? "#fef9c3" : row.rank <= 3 ? "#f1f5f9" : "transparent",
-                            color: row.rank === 1 ? "#d97706" : "#374151",
+                            background: "transparent",
+                            color: "#374151",
                           }}>
-                            {row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : row.rank}
+                            {row.rank}
                           </span>
                         </td>
                         <td style={{ ...styles.td, fontWeight: 700, color: "#374151" }}>{row.studentId}</td>

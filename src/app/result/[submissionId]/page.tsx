@@ -83,6 +83,13 @@ export default async function ResultPage({ params }: PageProps) {
                 hour: "2-digit", minute: "2-digit",
               })} 제출
             </div>
+            {submission.exam.explanationPdfUrl && (
+              <div style={{ marginTop: 8 }}>
+                <a href={submission.exam.explanationPdfUrl} target="_blank" rel="noreferrer" style={{ display: "inline-block", padding: "6px 12px", background: "rgba(255,255,255,0.2)", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+                  📄 해설지 다운로드
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
@@ -114,7 +121,6 @@ export default async function ResultPage({ params }: PageProps) {
               <col />
               <col style={{ width: 56 }} />
               <col style={{ width: 56 }} />
-              <col style={{ width: 56 }} />
             </colgroup>
             <thead>
               <tr>
@@ -123,7 +129,6 @@ export default async function ResultPage({ params }: PageProps) {
                 <th style={{ background: gradient }}>정답</th>
                 <th style={{ background: gradient }}>결과</th>
                 <th style={{ background: gradient }}>배점</th>
-                <th style={{ background: gradient }}>획득</th>
               </tr>
             </thead>
             <tbody>
@@ -183,15 +188,12 @@ export default async function ResultPage({ params }: PageProps) {
                     </span>
                   </td>
                   <td style={{ color: "#64748b", fontSize: 13 }}>{r.score}점</td>
-                  <td style={{ fontWeight: 800, color: r.earnedScore > 0 ? color : "#cbd5e1" }}>
-                    {r.earnedScore > 0 ? `+${r.earnedScore}` : "0"}
-                  </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={4} style={{ textAlign: "right", fontWeight: 700, color: "#374151", fontSize: 14, padding: "14px 8px" }}>
+                <td colSpan={3} style={{ textAlign: "right", fontWeight: 700, color: "#374151", fontSize: 14, padding: "14px 8px" }}>
                   최종 점수
                 </td>
                 <td colSpan={2} style={{ fontWeight: 900, fontSize: 20, color, padding: "14px 8px" }}>
@@ -202,7 +204,6 @@ export default async function ResultPage({ params }: PageProps) {
           </table>
         </div>
 
-        {/* Actions */}
         <div className="anim-fadeInUp" style={styles.actions}>
           <Link href="/" className="btn btn-primary">
             🏠 홈으로

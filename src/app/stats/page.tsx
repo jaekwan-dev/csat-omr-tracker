@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import BottomNav from "@/components/BottomNav";
+
 import StudentHeader from "@/components/StudentHeader";
 
 interface Summary {
@@ -156,10 +156,10 @@ export default function StatsPage() {
               <div style={styles.chartTitleRow}>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>
-                    📉 {SUBJECT_META[selectedSubject]?.label} 성적 변화 흐름 (백분율 %)
+                    📉 {SUBJECT_META[selectedSubject]?.label} 성적 변화 흐름
                   </div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                    응시한 시험의 획득 점수 비율(%) 추이입니다.
+                    응시한 시험의 획득 점수 추이입니다.
                   </div>
                 </div>
               </div>
@@ -179,9 +179,9 @@ export default function StatsPage() {
                         <div key={item.id} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end" }}>
                           {/* Score Label */}
                           <div style={{ fontSize: 11, fontWeight: 900, color: meta.color, marginBottom: 4 }}>
-                            {item.scorePercent}%
+                            {item.score}점
                           </div>
-                          
+
                           {/* Bar Graphic */}
                           <div
                             style={{
@@ -247,26 +247,13 @@ export default function StatsPage() {
                         <div style={{ width: 44, height: 44, borderRadius: 14, background: meta.gradient, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 20 }}>
                           {meta.emoji}
                         </div>
-                        <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <div style={{ fontSize: 17, fontWeight: 900, color: "#0f172a" }}>{meta.label}</div>
-                          <div style={{ fontSize: 12, color: "#64748b" }}>총 {stat.count}회 응시</div>
+                          <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>총 {stat.count}회 응시</div>
                         </div>
                       </div>
 
-                      {/* Trend Badge */}
-                      {stat.trend > 0 ? (
-                        <span style={{ background: "#d1fae5", color: "#059669", fontWeight: 800, fontSize: 12, padding: "4px 10px", borderRadius: 999 }}>
-                          📈 +{stat.trend}점 상승
-                        </span>
-                      ) : stat.trend < 0 ? (
-                        <span style={{ background: "#fee2e2", color: "#dc2626", fontWeight: 800, fontSize: 12, padding: "4px 10px", borderRadius: 999 }}>
-                          📉 {stat.trend}점 하락
-                        </span>
-                      ) : (
-                        <span style={{ background: "#f1f5f9", color: "#64748b", fontWeight: 700, fontSize: 12, padding: "4px 10px", borderRadius: 999 }}>
-                          ➖ 보합 유지
-                        </span>
-                      )}
+
                     </div>
 
                     <div style={styles.statGrid}>
@@ -289,7 +276,7 @@ export default function StatsPage() {
                     </div>
 
                     {/* Progress Bar */}
-                    <div style={{ marginTop: 14 }}>
+                    {/* <div style={{ marginTop: 14 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 6 }}>
                         <span>정답률 성취도</span>
                         <span>{stat.accuracy}%</span>
@@ -297,7 +284,7 @@ export default function StatsPage() {
                       <div style={{ height: 8, background: "#f1f5f9", borderRadius: 999, overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${stat.accuracy}%`, background: meta.gradient, borderRadius: 999, transition: "width 0.4s ease" }} />
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 );
               })}
@@ -305,8 +292,6 @@ export default function StatsPage() {
           </div>
         )}
       </main>
-
-      <BottomNav />
     </div>
   );
 }

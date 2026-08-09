@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
       const grade = parseInt(record["학년"] || "0", 10);
       const classNum = parseInt(record["반"] || "0", 10);
       
-      // 랜덤 4자리 PIN 생성
-      const pinCode = Math.floor(1000 + Math.random() * 9000).toString();
+      // 초기 PIN 번호는 "0000"으로 설정
+      const pinCode = "0000";
 
       if (!id || !name || isNaN(grade) || isNaN(classNum)) {
         throw new Error("CSV 데이터 양식이 올바르지 않습니다. (학번, 이름, 학년, 반)");

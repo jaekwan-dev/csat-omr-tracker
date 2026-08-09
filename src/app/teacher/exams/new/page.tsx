@@ -34,6 +34,7 @@ export default function NewExamPage() {
   const [subject, setSubject] = useState<string>("ENGLISH");
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState<QuestionInput[]>(() => buildQuestions("ENGLISH"));
+  const [explanationFile, setExplanationFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -86,11 +87,31 @@ export default function NewExamPage() {
     }
     setError("");
     setSubmitting(true);
+    let explanationPdfUrl: string | undefined;
+
+    try {
+      if (explanationFile) {
+        const formData = new FormData();
+        formData.append("file", explanationFile);
+        const uploadRes = await fetch(`/api/upload?filename=${encodeURIComponent(explanationFile.name)}`, {
+          method: "POST",
+          body: explanationFile,
+        });
+        if (!uploadRes.ok) throw new Error("해설지 업로드 실패");
+        const uploadData = await uploadRes.json();
+        explanationPdfUrl = uploadData.url;
+      }
+    } catch (err: any) {
+      setError(err.message || "업로드 오류가 발생했습니다.");
+      setSubmitting(false);
+      return;
+    }
+
     const def = SUBJECT_DEFAULTS[subject];
     const res = await fetch("/api/teacher/exams", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject, title: title.trim(), startNum: def.startNum, questions }),
+      body: JSON.stringify({ subject, title: title.trim(), startNum: def.startNum, explanationPdfUrl, questions }),
     });
     setSubmitting(false);
     if (!res.ok) {
@@ -159,6 +180,21 @@ export default function NewExamPage() {
                 회차, 날짜, 기출명 등을 자유롭게 입력하세요.
               </p>
             </div>
+
+            {/* Explanation PDF */}
+            <div>
+              <label className="label" htmlFor="explanationFile">해설지 PDF 업로드 (선택)</label>
+              <input
+                id="explanationFile"
+                className="input"
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setExplanationFile(e.target.files?.[0] || null)}
+              />
+              <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 6 }}>
+                학생들이 시험 제출 후 다운로드할 수 있는 해설지(PDF)를 업로드합니다.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -188,7 +224,6 @@ export default function NewExamPage() {
               <thead style={{ background: gradient }}>
                 <tr>
                   <th style={{ ...styles.th, color: "#fff", width: 60 }}>번호</th>
-                  {subject === "MATH" && <th style={{ ...styles.th, color: "#fff", width: 80 }}>유형</th>}
                   <th style={{ ...styles.th, color: "#fff" }}>정답 입력</th>
                   <th style={{ ...styles.th, color: "#fff", width: 80 }}>배점</th>
                 </tr>
@@ -199,22 +234,6 @@ export default function NewExamPage() {
                     <td style={{ ...styles.td, fontWeight: 700, color: "#374151", width: 60 }}>
                       {q.questionNum}
                     </td>
-                    {subject === "MATH" && (
-                      <td style={styles.td}>
-                        <button
-                          type="button"
-                          onClick={() => toggleSubjective(i)}
-                          style={{
-                            padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                            cursor: "pointer", border: "1px solid #e2e8f0",
-                            background: q.isSubjective ? "#f1f5f9" : "#fff",
-                            color: q.isSubjective ? "#475569" : "#0f172a",
-                          }}
-                        >
-                          {q.isSubjective ? "✏️ 단답" : "⭕ 객관"}
-                        </button>
-                      </td>
-                    )}
                     <td style={styles.td}>
                       {q.isSubjective ? (
                         <input

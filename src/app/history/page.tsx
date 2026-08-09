@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import BottomNav from "@/components/BottomNav";
+
 import StudentHeader from "@/components/StudentHeader";
 
 const SUBJECT_META: Record<string, { label: string; emoji: string; color: string; gradient: string }> = {
@@ -177,8 +177,6 @@ export default function HistoryPage() {
           </div>
         )}
       </main>
-
-      <BottomNav />
     </div>
   );
 }

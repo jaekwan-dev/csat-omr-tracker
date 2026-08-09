@@ -14,14 +14,18 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   try {
     const body = await req.json();
-    const { title, questions } = body as {
+    const { title, explanationPdfUrl, questions } = body as {
       title?: string;
+      explanationPdfUrl?: string;
       questions?: { questionNum: number; correctAnswer: number; score: number; isSubjective?: boolean }[];
     };
 
     await prisma.$transaction(async (tx) => {
-      if (title) {
-        await tx.exam.update({ where: { id: examId }, data: { title } });
+      if (title || explanationPdfUrl !== undefined) {
+        const updateData: any = {};
+        if (title) updateData.title = title;
+        if (explanationPdfUrl !== undefined) updateData.explanationPdfUrl = explanationPdfUrl;
+        await tx.exam.update({ where: { id: examId }, data: updateData });
       }
       if (questions) {
         // 기존 문항 삭제 후 재생성

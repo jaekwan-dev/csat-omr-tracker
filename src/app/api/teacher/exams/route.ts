@@ -8,14 +8,19 @@ export async function GET(req: NextRequest) {
   if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
-  const exams = await prisma.exam.findMany({
-    orderBy: [{ subject: "asc" }, { id: "asc" }],
-    include: {
-      questions: { orderBy: { questionNum: "asc" } },
-      _count: { select: { submissions: true } },
-    },
-  });
-  return NextResponse.json({ exams });
+  try {
+    const exams = await prisma.exam.findMany({
+      orderBy: [{ subject: "asc" }, { id: "asc" }],
+      include: {
+        questions: { orderBy: { questionNum: "asc" } },
+        _count: { select: { submissions: true } },
+      },
+    });
+    return NextResponse.json({ exams });
+  } catch (e: any) {
+    console.error("GET /api/teacher/exams Error:", e);
+    return NextResponse.json({ error: "서버 오류: " + e.message }, { status: 500 });
+  }
 }
 
 // POST /api/teacher/exams → 새 시험 생성
@@ -29,11 +34,13 @@ export async function POST(req: NextRequest) {
       subject,
       title,
       startNum,
+      explanationPdfUrl,
       questions,
     } = body as {
       subject: Subject;
       title: string;
       startNum: number;
+      explanationPdfUrl?: string;
       questions: { questionNum: number; correctAnswer: number; score: number; isSubjective?: boolean }[];
     };
 
@@ -47,6 +54,7 @@ export async function POST(req: NextRequest) {
         title,
         totalQuestions: questions.length,
         startNum,
+        explanationPdfUrl,
         questions: {
           create: questions.map((q) => ({
             questionNum: q.questionNum,

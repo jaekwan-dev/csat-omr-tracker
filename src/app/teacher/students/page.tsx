@@ -66,7 +66,7 @@ export default function StudentManagementPage() {
     setFormName("");
     setFormGrade("1");
     setFormClass("1");
-    setFormPin(Math.floor(1000 + Math.random() * 9000).toString());
+    setFormPin("0000");
     setErrorMsg("");
     setIsModalOpen(true);
   }
@@ -201,7 +201,6 @@ export default function StudentManagementPage() {
             <h1 style={styles.title}>학생 관리</h1>
             <span style={styles.countBadge}>{students.length}명</span>
           </div>
-          <p style={styles.subtitle}>학생 계정 등록 및 PIN 번호를 관리합니다.</p>
         </div>
 
         {/* Top Action Buttons (Responsive Grid) */}
@@ -351,7 +350,7 @@ export default function StudentManagementPage() {
                           ✏️ 수정
                         </button>
                         <button onClick={() => handleDelete(s)} className="btn btn-sm" style={styles.dtDeleteBtn}>
-                          🗑 삭제
+                          🗑️ 삭제
                         </button>
                       </div>
                     </td>
@@ -477,7 +476,7 @@ export default function StudentManagementPage() {
 
             <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16, lineHeight: 1.5 }}>
               엑셀/CSV 양식을 업로드하여 수십 명의 학생을 한 번에 등록합니다.
-              <br />PIN 번호는 자동으로 4자리 발급됩니다.
+              <br />최초 PIN 번호는 자동으로 0000으로 설정됩니다.
             </p>
 
             <form onSubmit={handleCsvUpload} style={{ display: "flex", flexDirection: "column", gap: 16 }}>

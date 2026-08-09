@@ -16,6 +16,7 @@ interface Question { questionNum: number; correctAnswer: number; score: number; 
 interface Exam {
   id: number; subject: string; title: string;
   totalQuestions: number; startNum: number;
+  explanationPdfUrl?: string | null;
   questions: Question[];
   _count: { submissions: number };
 }
@@ -29,15 +30,35 @@ export default function ExamManagementPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [editQuestions, setEditQuestions] = useState<Question[]>([]);
+  const [editExplanationFile, setEditExplanationFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
   const fetchExams = useCallback(async () => {
     setLoading(true);
-    const r = await fetch("/api/teacher/exams");
-    const d = await r.json();
-    setExams(d.exams ?? []);
-    setLoading(false);
+    try {
+      const r = await fetch("/api/teacher/exams");
+      const text = await r.text();
+      let d;
+      try {
+        d = JSON.parse(text);
+      } catch (err) {
+        console.error("Failed to parse JSON:", text);
+        setExams([]);
+        return;
+      }
+      if (r.ok) {
+        setExams(d.exams ?? []);
+      } else {
+        console.error(d.error);
+        setExams([]);
+      }
+    } catch (e) {
+      console.error(e);
+      setExams([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchExams(); }, [fetchExams]);
@@ -61,16 +82,37 @@ export default function ExamManagementPage() {
   function startEdit(exam: Exam) {
     setEditingExam(exam);
     setEditQuestions(exam.questions.map((q) => ({ ...q })));
+    setEditExplanationFile(null);
     setMsg("");
   }
 
   async function handleSaveEdit() {
     if (!editingExam) return;
     setSaving(true);
+    let explanationPdfUrl = editingExam.explanationPdfUrl;
+
+    if (editExplanationFile) {
+      try {
+        const formData = new FormData();
+        formData.append("file", editExplanationFile);
+        const uploadRes = await fetch(`/api/upload?filename=${encodeURIComponent(editExplanationFile.name)}`, {
+          method: "POST",
+          body: editExplanationFile,
+        });
+        if (!uploadRes.ok) throw new Error("업로드 실패");
+        const uploadData = await uploadRes.json();
+        explanationPdfUrl = uploadData.url;
+      } catch (err: any) {
+        setMsg("❌ " + (err.message || "해설지 업로드 실패"));
+        setSaving(false);
+        return;
+      }
+    }
+
     const r = await fetch(`/api/teacher/exams/${editingExam.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: editingExam.title, questions: editQuestions }),
+      body: JSON.stringify({ title: editingExam.title, explanationPdfUrl, questions: editQuestions }),
     });
     setSaving(false);
     if (r.ok) {
@@ -83,7 +125,7 @@ export default function ExamManagementPage() {
   }
 
   return (
-    <div className="container" style={{ paddingTop: 24, paddingBottom: 80 }}>
+    <div className="container" style={{ paddingTop: 20, paddingBottom: 80 }}>
       {/* Header Row */}
       <div style={styles.pageHeader}>
         <div>
@@ -91,7 +133,6 @@ export default function ExamManagementPage() {
             <h1 style={styles.pageTitle}>시험 관리</h1>
             <span style={styles.countBadge}>{exams.length}개 시험</span>
           </div>
-          <p style={styles.pageSubtitle}>시험을 등록하고 정답 및 배점을 관리하세요.</p>
         </div>
         <Link href="/teacher/exams/new" className="btn btn-primary" style={styles.createBtn}>
           <span>➕</span>
@@ -186,30 +227,30 @@ export default function ExamManagementPage() {
                 {/* Exam Info Title & Detail */}
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={styles.examItemTitle}>{exam.title}</div>
-                  <div style={styles.examItemMeta}>
+                  {/* <div style={styles.examItemMeta}>
                     <span>{exam.totalQuestions}문항 ({exam.startNum}번부터)</span>
                     <span>·</span>
                     <span style={{ fontWeight: 700, color: "#334155" }}>만점: {totalMaxScore}점</span>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Submissions Badge */}
-                <div style={styles.submissionCountChip}>
+                {/* <div style={styles.submissionCountChip}>
                   <span>📝</span>
                   <span>제출 <strong>{exam._count.submissions}</strong>건</span>
-                </div>
+                </div> */}
 
                 {/* Action Buttons */}
                 <div style={styles.itemActionGroup}>
                   <button onClick={() => startEdit(exam)} style={{ ...styles.editBtn, color }}>
-                    ✏️ 정답 수정
+                    ✏️ 수정
                   </button>
                   <button
                     onClick={() => handleDelete(exam)}
                     disabled={deletingId === exam.id}
                     style={styles.deleteBtn}
                   >
-                    {deletingId === exam.id ? <span className="spinner" style={{ width: 14, height: 14, borderTopColor: "#dc2626", borderColor: "#fecaca" }} /> : "🗑 삭제"}
+                    {deletingId === exam.id ? <span className="spinner" style={{ width: 14, height: 14, borderTopColor: "#dc2626", borderColor: "#fecaca" }} /> : "🗑️ 삭제"}
                   </button>
                 </div>
               </div>
@@ -234,12 +275,28 @@ export default function ExamManagementPage() {
               <button onClick={() => setEditingExam(null)} style={{ fontSize: 18, cursor: "pointer", background: "none", border: "none", color: "#94a3b8" }}>✕</button>
             </div>
 
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>
+                해설지 PDF 업로드 (새 파일 선택 시 교체됨)
+              </label>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setEditExplanationFile(e.target.files?.[0] || null)}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13 }}
+              />
+              {editingExam.explanationPdfUrl && !editExplanationFile && (
+                <div style={{ fontSize: 12, color: "#0f766e", marginTop: 4 }}>
+                  현재 등록된 해설지가 있습니다.
+                </div>
+              )}
+            </div>
+
             <div style={{ overflowY: "auto", maxHeight: "60vh", marginBottom: 20, borderRadius: 14, border: "1px solid #e2e8f0" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead style={{ position: "sticky", top: 0, background: "#f8faff", zIndex: 10 }}>
                   <tr>
                     <th style={{ ...styles.editTh, width: 50 }}>번호</th>
-                    {editingExam.subject === "MATH" && <th style={{ ...styles.editTh, width: 70 }}>유형</th>}
                     <th style={styles.editTh}>정답 입력</th>
                     <th style={{ ...styles.editTh, width: 70 }}>배점</th>
                   </tr>
@@ -250,31 +307,6 @@ export default function ExamManagementPage() {
                       <td style={styles.editTd}>
                         <span style={{ fontWeight: 800, color: "#374151" }}>{q.questionNum}</span>
                       </td>
-                      {editingExam.subject === "MATH" && (
-                        <td style={styles.editTd}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nxt = [...editQuestions];
-                              const isSubj = !nxt[i].isSubjective;
-                              nxt[i] = {
-                                ...nxt[i],
-                                isSubjective: isSubj,
-                                correctAnswer: isSubj ? 0 : 1,
-                              };
-                              setEditQuestions(nxt);
-                            }}
-                            style={{
-                              padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                              cursor: "pointer", border: "1px solid #cbd5e1",
-                              background: q.isSubjective ? "#f1f5f9" : "#fff",
-                              color: q.isSubjective ? "#475569" : "#0f172a",
-                            }}
-                          >
-                            {q.isSubjective ? "✏️ 단답" : "⭕ 객관"}
-                          </button>
-                        </td>
-                      )}
                       <td style={styles.editTd}>
                         {q.isSubjective ? (
                           <input
@@ -486,26 +518,30 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 8,
-    marginLeft: "auto",
-    flexShrink: 0,
+    width: "100%", // Take full width to form a bottom row
+    marginTop: 2,  // Add spacing from the top content
   },
   editBtn: {
-    padding: "8px 14px",
+    flex: 1, // Take half width
+    padding: "10px",
     borderRadius: 12,
     background: "#f1f5f9",
     fontWeight: 800,
     fontSize: 13,
+    textAlign: "center",
     cursor: "pointer",
     border: "1px solid #cbd5e1",
     transition: "all 0.15s",
   },
   deleteBtn: {
-    padding: "8px 14px",
+    flex: 1, // Take half width
+    padding: "10px",
     borderRadius: 12,
     background: "#fef2f2",
     color: "#dc2626",
     fontWeight: 800,
     fontSize: 13,
+    textAlign: "center",
     cursor: "pointer",
     border: "1px solid #fecaca",
     transition: "all 0.15s",

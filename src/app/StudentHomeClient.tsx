@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import LogoutButton from "./LogoutButton";
-import BottomNav from "@/components/BottomNav";
+
 
 const SUBJECT_META = {
   KOREAN: {
@@ -89,11 +89,11 @@ export default function StudentHomeClient({
 
       <main className="container" style={styles.main}>
         {/* Hero Section */}
-        <div className="anim-fadeInUp" style={styles.hero}>
+        {/* <div className="anim-fadeInUp" style={styles.hero}>
           <h1 style={styles.heroTitle}>
             응시할 시험을 선택하세요
           </h1>
-        </div>
+        </div> */}
 
         {/* 상단 과목 필터바 (스크롤 0% 3열 균등 그리드 & 검색창) */}
         <div style={styles.filterControlCard}>
@@ -208,8 +208,7 @@ export default function StudentHomeClient({
         </div>
       </main>
 
-      {/* Bottom Navigation */}
-      <BottomNav />
+
     </div>
   );
 }
