@@ -21,6 +21,7 @@ model Exam {
   title           String   // "1회차", "2024-06"
   totalQuestions  Int
   startNum        Int      @default(1)
+  isPublished     Boolean  @default(false)
   explanationPdfUrl String? // 해설지 PDF 다운로드 링크
   questions       Question[]
   submissions     Submission[]

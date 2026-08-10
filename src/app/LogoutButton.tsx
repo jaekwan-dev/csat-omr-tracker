@@ -19,10 +19,10 @@ export default function LogoutButton() {
     <button
       onClick={handleLogout}
       disabled={loading}
-      className="btn btn-ghost btn-sm"
+      className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50 disabled:pointer-events-none"
     >
       {loading ? (
-        <span className="spinner" style={{ width: 14, height: 14, borderTopColor: "#64748b", borderColor: "#e2e8f0" }} />
+        <span className="w-3.5 h-3.5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
       ) : (
         "로그아웃"
       )}

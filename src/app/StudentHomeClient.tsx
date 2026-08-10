@@ -2,30 +2,41 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import LogoutButton from "./LogoutButton";
+import { Search, X, CheckCircle2, ChevronRight, FileText, BookOpen, Calculator, Globe } from "lucide-react";
+import { cn } from "@/lib/utils";
 
+import StudentHeader from "@/components/StudentHeader";
 
 const SUBJECT_META = {
   KOREAN: {
     label: "국어",
     labelEn: "KOREAN",
-    emoji: "📖",
-    color: "#764ba2",
-    gradient: "linear-gradient(135deg, #6366f1 0%, #764ba2 100%)",
+    icon: BookOpen,
+    color: "bg-purple-400",
+    text: "text-purple-500",
+    border: "border-purple-200",
+    bgLight: "bg-purple-50",
+    gradient: "from-purple-400 to-purple-500",
   },
   MATH: {
     label: "수학",
     labelEn: "MATHEMATICS",
-    emoji: "📐",
-    color: "#7c3aed",
-    gradient: "linear-gradient(135deg, #ea580c 0%, #c026d3 60%, #7c3aed 100%)",
+    icon: Calculator,
+    color: "bg-orange-400",
+    text: "text-orange-500",
+    border: "border-orange-200",
+    bgLight: "bg-orange-50",
+    gradient: "from-orange-400 to-orange-500",
   },
   ENGLISH: {
     label: "영어",
     labelEn: "ENGLISH",
-    emoji: "🔤",
-    color: "#3b82f6",
-    gradient: "linear-gradient(135deg, #0284c7 0%, #3b82f6 100%)",
+    icon: Globe,
+    color: "bg-blue-400",
+    text: "text-blue-500",
+    border: "border-blue-200",
+    bgLight: "bg-blue-50",
+    gradient: "from-blue-400 to-blue-500",
   },
 } as const;
 
@@ -45,8 +56,6 @@ interface SessionData {
   grade: number;
   classNum: number;
 }
-
-import StudentHeader from "@/components/StudentHeader";
 
 export default function StudentHomeClient({
   session,
@@ -80,25 +89,30 @@ export default function StudentHomeClient({
   }, [subjectUnsubmittedExams, searchQuery, currentMeta]);
 
   return (
-    <div style={styles.page}>
+    <div className="min-h-screen bg-muted/20 flex flex-col relative overflow-x-hidden">
       {/* Background decoration */}
-      <div style={styles.bgDeco} />
+      <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-secondary/50 to-transparent -z-10 pointer-events-none" />
 
       {/* Top Navigation Header */}
       <StudentHeader session={session} />
 
-      <main className="container" style={styles.main}>
-        {/* Hero Section */}
-        {/* <div className="anim-fadeInUp" style={styles.hero}>
-          <h1 style={styles.heroTitle}>
-            응시할 시험을 선택하세요
+      <main className="container max-w-2xl mx-auto flex-1 relative z-10 pt-6 pb-12 px-4 flex flex-col gap-6">
+        
+        {/* Page Title */}
+        <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-2">
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            시험 선택
           </h1>
-        </div> */}
+          <p className="text-sm font-medium text-muted-foreground">
+            응시할 시험을 선택하고 OMR 마킹을 시작하세요.
+          </p>
+        </div>
 
-        {/* 상단 과목 필터바 (스크롤 0% 3열 균등 그리드 & 검색창) */}
-        <div style={styles.filterControlCard}>
-          {/* 과목 선택 3열 균등 그리드 */}
-          <div style={styles.subjectFilterGrid}>
+        {/* Filter Control Card */}
+        <div className="bg-card rounded-3xl p-4 sm:p-5 border border-border shadow-sm flex flex-col gap-4">
+          
+          {/* Subject Filter Grid */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {(["KOREAN", "MATH", "ENGLISH"] as Subject[]).map((subjKey) => {
               const meta = SUBJECT_META[subjKey];
               const isActive = selectedSubjectFilter === subjKey;
@@ -107,99 +121,114 @@ export default function StudentHomeClient({
                 <button
                   key={subjKey}
                   onClick={() => setSelectedSubjectFilter(subjKey)}
-                  style={{
-                    ...styles.subjectGridBtn,
-                    background: isActive ? meta.color : "#f8fafc",
-                    color: isActive ? "#ffffff" : "#475569",
-                    borderColor: isActive ? meta.color : "#cbd5e1",
-                    fontWeight: isActive ? 900 : 700,
-                    boxShadow: isActive ? `0 4px 12px ${meta.color}33` : "none",
-                  }}
+                  className={cn(
+                    "flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-3 sm:py-3.5 rounded-2xl border transition-all duration-300",
+                    isActive 
+                      ? cn(meta.color, "text-white border-transparent shadow-md scale-[1.02]") 
+                      : "bg-secondary text-secondary-foreground border-transparent hover:border-border hover:bg-muted"
+                  )}
                 >
-                  <span style={{ fontSize: 16 }}>{meta.emoji}</span>
-                  <span style={{ fontSize: 14 }}>{meta.label}</span>
-                  <span style={{ fontSize: 11, opacity: 0.85, marginLeft: 2 }}>({count})</span>
+                  <meta.icon className="w-5 h-5 sm:w-4 sm:h-4 mb-0.5 sm:mb-0" />
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs sm:text-sm font-bold">{meta.label}</span>
+                    <span className={cn("text-[10px] sm:text-xs font-semibold", isActive ? "text-white/80" : "text-muted-foreground")}>
+                      ({count})
+                    </span>
+                  </div>
                 </button>
               );
             })}
           </div>
 
-          {/* 검색 입력창 */}
-          <div style={styles.searchBox}>
-            <span style={{ fontSize: 16, color: "#94a3b8" }}>🔍</span>
+          {/* Search Box */}
+          <div className="flex items-center gap-2 bg-background rounded-2xl px-4 py-3 border border-input focus-within:ring-2 focus-within:ring-ring/30 focus-within:border-primary/50 transition-all">
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <input
               type="text"
               placeholder={`${currentMeta.label} 시험 제목 검색...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={styles.searchInput}
+              className="flex-1 bg-transparent border-none outline-none text-sm font-medium placeholder:text-muted-foreground"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} style={styles.clearBtn}>
-                ✕
+              <button 
+                onClick={() => setSearchQuery("")} 
+                className="p-1 hover:bg-secondary rounded-full text-muted-foreground transition-colors shrink-0"
+              >
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
 
-        {/* 시험 목록 카드 섹션 (응시 가능 시험 없을 시 안내 카드 표시) */}
-        <div className="stagger" style={styles.cardGrid}>
+        {/* Exam List Cards */}
+        <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {filteredExams.length === 0 ? (
-            <div style={styles.emptyNoticeCard}>
-              <div style={{ fontSize: 44, marginBottom: 12 }}>📝</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#0f172a", marginBottom: 6 }}>
-                {searchQuery ? "검색 조건에 일치하는 시험이 없습니다" : `현재 응시할 수 있는 ${currentMeta.label} 시험이 없습니다`}
+            <div className="bg-card rounded-3xl p-10 text-center border border-border shadow-sm flex flex-col items-center justify-center min-h-[300px]">
+              <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-5">
+                <FileText className="w-8 h-8 text-muted-foreground" />
               </div>
-              <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6, maxWidth: 360, margin: "0 auto" }}>
+              <h3 className="text-lg font-black text-foreground mb-2">
+                {searchQuery ? "검색 조건에 일치하는 시험이 없습니다" : `현재 응시할 수 있는 ${currentMeta.label} 시험이 없습니다`}
+              </h3>
+              <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-[280px]">
                 {searchQuery ? (
                   "다른 검색어를 입력하거나 검색어를 초기화해 주세요."
                 ) : isAllCompleted ? (
                   <>
-                    🎉 <strong>{currentMeta.label} 영역의 모든 시험 제출을 완료하셨습니다!</strong>
-                    <br />
-                    제출하신 성적 결과표와 답안지는 하단 📜 <strong>[학습 이력]</strong> 탭에서 언제든지 확인하실 수 있습니다.
+                    🎉 <strong className={currentMeta.text}>{currentMeta.label} 영역의 모든 시험 제출을 완료하셨습니다!</strong><br/>
+                    학습 이력 탭에서 성적표를 확인해 보세요.
                   </>
                 ) : (
-                  "해당 과목에 아직 등록된 미응시 시험이 없습니다. 선생님이 새 시험을 등록하면 이곳에 표시됩니다."
+                  "해당 과목에 아직 등록된 시험이 없습니다. 선생님이 새 시험을 등록하면 표시됩니다."
                 )}
-              </div>
-              {isAllCompleted && (
+              </p>
+              {isAllCompleted && !searchQuery && (
                 <Link
                   href="/history"
-                  className="btn btn-primary"
-                  style={{ marginTop: 18, padding: "8px 20px", fontSize: 13, background: currentMeta.color }}
+                  className={cn("mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md transition-transform hover:-translate-y-0.5", currentMeta.color)}
                 >
-                  📜 학습 이력 바로가기
+                  <CheckCircle2 className="w-4 h-4" /> 학습 이력 바로가기
                 </Link>
               )}
             </div>
           ) : (
-            /* 선택된 과목의 미응시 시험 카드 목록 */
             filteredExams.map((exam) => (
-              <Link key={exam.id} href={`/exam/${exam.id}`} style={{ display: "block" }}>
+              <Link key={exam.id} href={`/exam/${exam.id}`} className="group block">
                 <div
-                  className="subject-card"
-                  style={{ background: currentMeta.gradient }}
+                  className={cn(
+                    "rounded-3xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-gradient-to-br",
+                    currentMeta.gradient
+                  )}
                 >
-                  <div className="subject-card-body" style={{ padding: "20px 24px" }}>
-                    <div style={styles.cardTopRow}>
+                  <div className="p-6 sm:p-7 flex flex-col gap-5">
+                    
+                    <div className="flex items-start justify-between">
                       <div>
-                        <div style={styles.cardSubjectLabel}>{currentMeta.label}</div>
-                        <div style={styles.cardSubjectEn}>{currentMeta.labelEn}</div>
+                        <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tighter drop-shadow-sm mb-1">
+                          {currentMeta.label}
+                        </h2>
+                        <p className="text-xs font-bold text-white/70 tracking-[0.15em]">
+                          {currentMeta.labelEn}
+                        </p>
                       </div>
-                      {/* 오른쪽 과목 시그니처 글래스모피즘 이모지 뱃지 */}
-                      <div style={styles.cardEmojiBadgeGroup}>
-                        <div style={styles.cardEmojiBadge}>
-                          <span style={{ fontSize: 28, lineHeight: 1 }}>{currentMeta.emoji}</span>
-                        </div>
+                      
+                      {/* Icon Badge */}
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/25 backdrop-blur-md border-[1.5px] border-white/40 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
+                        <currentMeta.icon className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-sm" />
                       </div>
                     </div>
 
-                    {/* 시험명 칩 & 화살표 */}
-                    <div style={styles.cardExamRow}>
-                      <span style={styles.examTitleChip}>{exam.title}</span>
-                      <span style={styles.cardArrow}>›</span>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-sm flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        <span className="text-white text-sm font-bold tracking-tight">{exam.title}</span>
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-white group-hover:text-foreground transition-colors">
+                        <ChevronRight className="w-6 h-6" />
+                      </div>
                     </div>
+
                   </div>
                 </div>
               </Link>
@@ -207,274 +236,6 @@ export default function StudentHomeClient({
           )}
         </div>
       </main>
-
-
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background: "#f0f4ff",
-    display: "flex",
-    flexDirection: "column",
-    position: "relative",
-    overflowX: "hidden",
-  },
-  bgDeco: {
-    position: "fixed",
-    top: 0, left: 0, right: 0,
-    height: 260,
-    background: "linear-gradient(180deg, #e8eeff 0%, #f0f4ff 100%)",
-    zIndex: 0,
-    pointerEvents: "none",
-  },
-  header: {
-    position: "sticky",
-    top: 0,
-    zIndex: 50,
-    background: "rgba(240,244,255,0.9)",
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
-    borderBottom: "1px solid rgba(226,232,240,0.8)",
-  },
-  headerInner: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    height: 64,
-  },
-  logo: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
-  logoEmoji: { fontSize: 24 },
-  logoText: {
-    fontSize: 18,
-    fontWeight: 900,
-    color: "#1e3a8a",
-    letterSpacing: "-0.02em",
-  },
-  userRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #3b82f6, #7c3aed)",
-    color: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 800,
-    fontSize: 15,
-  },
-  userInfo: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 1,
-  },
-  userName: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#0f172a",
-    lineHeight: 1,
-  },
-  userMeta: {
-    fontSize: 11,
-    color: "#94a3b8",
-    lineHeight: 1,
-  },
-  main: {
-    flex: 1,
-    position: "relative",
-    zIndex: 1,
-    paddingTop: 24,
-    paddingBottom: 100,
-    display: "flex",
-    flexDirection: "column",
-    gap: 18,
-  },
-  hero: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  heroBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    background: "#dbeafe",
-    color: "#1d4ed8",
-    fontWeight: 700,
-    fontSize: 12,
-    padding: "5px 12px",
-    borderRadius: 999,
-    width: "fit-content",
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-  },
-  heroBadgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: "50%",
-    background: "#3b82f6",
-  },
-  heroTitle: {
-    fontSize: "clamp(24px, 4vw, 36px)",
-    fontWeight: 900,
-    color: "#0f172a",
-    lineHeight: 1.25,
-    letterSpacing: "-0.03em",
-  },
-  heroSub: {
-    fontSize: 14,
-    color: "#475569",
-  },
-
-  /* Top Subject Filter Control Card */
-  filterControlCard: {
-    background: "#ffffff",
-    borderRadius: 20,
-    padding: "14px 16px",
-    border: "1px solid #cbd5e1",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-  subjectFilterGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 8,
-  },
-  subjectGridBtn: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    padding: "10px 6px",
-    borderRadius: 14,
-    cursor: "pointer",
-    border: "1.5px solid #cbd5e1",
-    transition: "all 0.15s",
-    textAlign: "center",
-  },
-  searchBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    background: "#f8fafc",
-    borderRadius: 14,
-    padding: "8px 14px",
-    border: "1px solid #cbd5e1",
-  },
-  searchInput: {
-    flex: 1,
-    border: "none",
-    background: "transparent",
-    fontSize: 14,
-    outline: "none",
-    color: "#0f172a",
-  },
-  clearBtn: {
-    fontSize: 13,
-    color: "#94a3b8",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-  },
-
-  cardGrid: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-  },
-  emptyNoticeCard: {
-    background: "#ffffff",
-    borderRadius: 24,
-    padding: "48px 24px",
-    textAlign: "center",
-    border: "1px solid #cbd5e1",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  subjectCard: {
-    borderRadius: 24,
-    overflow: "hidden",
-    cursor: "pointer",
-    boxShadow: "0 10px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08)",
-    transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-  },
-  cardTopRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  cardSubjectLabel: {
-    fontSize: 34,
-    fontWeight: 900,
-    color: "#fff",
-    letterSpacing: "-0.03em",
-    lineHeight: 1,
-    marginBottom: 4,
-    textShadow: "0 2px 8px rgba(0,0,0,0.2)",
-  },
-  cardSubjectEn: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: "rgba(255,255,255,0.75)",
-    letterSpacing: "0.1em",
-  },
-  cardEmojiBadgeGroup: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cardEmojiBadge: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    background: "rgba(255, 255, 255, 0.25)",
-    backdropFilter: "blur(14px)",
-    WebkitBackdropFilter: "blur(14px)",
-    border: "1.5px solid rgba(255, 255, 255, 0.4)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.4)",
-  },
-
-  cardExamRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 4,
-  },
-  examTitleChip: {
-    background: "rgba(255,255,255,0.25)",
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: 800,
-    padding: "6px 14px",
-    borderRadius: 999,
-    backdropFilter: "blur(6px)",
-    letterSpacing: "-0.01em",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-  },
-  cardArrow: {
-    fontSize: 26,
-    color: "rgba(255,255,255,0.9)",
-    fontWeight: 300,
-    lineHeight: 1,
-  },
-};

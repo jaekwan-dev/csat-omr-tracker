@@ -2,13 +2,36 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { Search, X, Loader2, ChevronRight, BookOpen, Calculator, Globe, FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import StudentHeader from "@/components/StudentHeader";
 
-const SUBJECT_META: Record<string, { label: string; emoji: string; color: string; gradient: string }> = {
-  KOREAN: { label: "국어", emoji: "📚", color: "#764ba2", gradient: "linear-gradient(145deg, #667eea 0%, #764ba2 100%)" },
-  MATH: { label: "수학", emoji: "✏️", color: "#7c3aed", gradient: "linear-gradient(145deg, #f97316 0%, #7c3aed 100%)" },
-  ENGLISH: { label: "영어", emoji: "💡", color: "#3b82f6", gradient: "linear-gradient(145deg, #06b6d4 0%, #3b82f6 100%)" },
+const SUBJECT_META: Record<string, { label: string; icon: any; color: string; bgLight: string; text: string; gradient: string }> = {
+  KOREAN: { 
+    label: "국어", 
+    icon: BookOpen,
+    color: "bg-purple-400", 
+    bgLight: "bg-purple-50", 
+    text: "text-purple-500", 
+    gradient: "from-purple-400 to-purple-500" 
+  },
+  MATH: { 
+    label: "수학", 
+    icon: Calculator,
+    color: "bg-orange-400", 
+    bgLight: "bg-orange-50", 
+    text: "text-orange-500", 
+    gradient: "from-orange-400 to-orange-500" 
+  },
+  ENGLISH: { 
+    label: "영어", 
+    icon: Globe,
+    color: "bg-blue-400", 
+    bgLight: "bg-blue-50", 
+    text: "text-blue-500", 
+    gradient: "from-blue-400 to-blue-500" 
+  },
 };
 
 interface Submission {
@@ -53,67 +76,79 @@ export default function HistoryPage() {
     });
   }, [submissions, selectedSubjectFilter, searchQuery]);
 
+  const currentMeta = SUBJECT_META[selectedSubjectFilter] || SUBJECT_META.KOREAN;
+
   return (
-    <div style={styles.page}>
-      <div style={styles.bgDeco} />
+    <div className="min-h-screen bg-muted/20 flex flex-col relative overflow-x-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-secondary/50 to-transparent -z-10 pointer-events-none" />
       
       <StudentHeader />
 
-      <main className="container" style={styles.main}>
-        <div className="anim-fadeInUp" style={{ marginBottom: 16 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: "#0f172a", marginBottom: 4 }}>
-            제출 이력
+      <main className="container max-w-2xl mx-auto flex-1 relative z-10 pt-6 pb-12 px-4 flex flex-col gap-6">
+        
+        <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-2">
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            학습 이력
           </h1>
-          <p style={{ fontSize: 13, color: "#475569" }}>
+          <p className="text-sm font-medium text-muted-foreground">
             제출을 완료한 시험 성적 및 채점 결과표를 조회합니다.
           </p>
         </div>
 
-        {/* Top Subject Filter & Search Bar */}
-        <div style={styles.filterControlCard}>
-          {/* 과목 3열 균등 그리드 (스크롤 0%) */}
-          <div style={styles.subjectFilterGrid}>
+        {/* Filter Control Card */}
+        <div className="bg-card rounded-3xl p-4 sm:p-5 border border-border shadow-sm flex flex-col gap-4">
+          
+          {/* Subject Filter Grid */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {[
-              { id: "KOREAN", label: "국어", emoji: "📚", count: submissions.filter(s => s.subject === "KOREAN").length },
-              { id: "MATH", label: "수학", emoji: "✏️", count: submissions.filter(s => s.subject === "MATH").length },
-              { id: "ENGLISH", label: "영어", emoji: "💡", count: submissions.filter(s => s.subject === "ENGLISH").length },
+              { id: "KOREAN", key: "KOREAN" },
+              { id: "MATH", key: "MATH" },
+              { id: "ENGLISH", key: "ENGLISH" },
             ].map((tab) => {
+              const meta = SUBJECT_META[tab.key];
               const isActive = selectedSubjectFilter === tab.id;
-              const activeColor = SUBJECT_META[tab.id]?.color || "#3b82f6";
+              const count = submissions.filter(s => s.subject === tab.id).length;
+              const Icon = meta.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedSubjectFilter(tab.id)}
-                  style={{
-                    ...styles.subjectGridBtn,
-                    background: isActive ? activeColor : "#f8fafc",
-                    color: isActive ? "#ffffff" : "#475569",
-                    borderColor: isActive ? activeColor : "#cbd5e1",
-                    fontWeight: isActive ? 900 : 700,
-                    boxShadow: isActive ? `0 4px 12px ${activeColor}33` : "none",
-                  }}
+                  className={cn(
+                    "flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-3 sm:py-3.5 rounded-2xl border transition-all duration-300",
+                    isActive 
+                      ? cn(meta.color, "text-white border-transparent shadow-md scale-[1.02]") 
+                      : "bg-secondary text-secondary-foreground border-transparent hover:border-border hover:bg-muted"
+                  )}
                 >
-                  <span style={{ fontSize: 16 }}>{tab.emoji}</span>
-                  <span style={{ fontSize: 14 }}>{tab.label}</span>
-                  <span style={{ fontSize: 11, opacity: 0.85, marginLeft: 2 }}>({tab.count})</span>
+                  <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-muted-foreground")} />
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs sm:text-sm font-bold">{meta.label}</span>
+                    <span className={cn("text-[10px] sm:text-xs font-semibold", isActive ? "text-white/80" : "text-muted-foreground")}>
+                      ({count})
+                    </span>
+                  </div>
                 </button>
               );
             })}
           </div>
 
-          {/* 검색 입력창 */}
-          <div style={styles.searchBox}>
-            <span style={{ fontSize: 16, color: "#94a3b8" }}>🔍</span>
+          {/* Search Box */}
+          <div className="flex items-center gap-2 bg-background rounded-2xl px-4 py-3 border border-input focus-within:ring-2 focus-within:ring-ring/30 focus-within:border-primary/50 transition-all">
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <input
               type="text"
-              placeholder={`${SUBJECT_META[selectedSubjectFilter]?.label} 제출 시험 검색...`}
+              placeholder={`${currentMeta.label} 제출 시험 검색...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={styles.searchInput}
+              className="flex-1 bg-transparent border-none outline-none text-sm font-medium placeholder:text-foreground"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} style={styles.clearBtn}>
-                ✕
+              <button 
+                onClick={() => setSearchQuery("")} 
+                className="p-1 hover:bg-secondary rounded-full text-muted-foreground transition-colors shrink-0"
+              >
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -121,55 +156,73 @@ export default function HistoryPage() {
 
         {/* Loading / Empty / Filtered List */}
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px 0" }}>
-            <div className="spinner" style={{ width: 36, height: 36, borderTopColor: "#3b82f6", borderColor: "#bfdbfe", margin: "0 auto" }} />
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <p className="text-sm font-bold text-muted-foreground">이력을 불러오는 중...</p>
           </div>
         ) : submissions.length === 0 ? (
-          <div style={styles.emptyCard}>
-            <div style={{ fontSize: 44, marginBottom: 8 }}>📝</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: "#0f172a" }}>아직 제출한 시험이 없습니다</div>
-            <div style={{ marginTop: 6, fontSize: 13, color: "#64748b" }}>홈 화면에서 시험에 응시해 첫 성적표를 받아보세요!</div>
+          <div className="bg-card rounded-3xl p-10 text-center border border-border shadow-sm flex flex-col items-center justify-center min-h-[300px]">
+            <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-5">
+              <FileText className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-black text-foreground mb-2">아직 제출한 시험이 없습니다</h3>
+            <p className="text-sm font-medium text-muted-foreground">홈 화면에서 시험에 응시해 첫 성적표를 받아보세요!</p>
           </div>
         ) : filteredSubmissions.length === 0 ? (
-          <div style={styles.emptyCard}>
-            <div style={{ fontSize: 44, marginBottom: 8 }}>🔍</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: "#0f172a" }}>조회된 시험 결과가 없습니다</div>
-            <div style={{ marginTop: 6, fontSize: 13, color: "#64748b" }}>
-              {searchQuery ? "입력하신 검색어와 일치하는 시험이 없습니다." : "선택한 과목에 응시 완료한 시험이 없습니다."}
+          <div className="bg-card rounded-3xl p-10 text-center border border-border shadow-sm flex flex-col items-center justify-center min-h-[300px]">
+            <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-5">
+              <Search className="w-8 h-8 text-muted-foreground" />
             </div>
+            <h3 className="text-lg font-black text-foreground mb-2">조회된 시험 결과가 없습니다</h3>
+            <p className="text-sm font-medium text-muted-foreground">
+              {searchQuery ? "입력하신 검색어와 일치하는 시험이 없습니다." : "선택한 과목에 응시 완료한 시험이 없습니다."}
+            </p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {filteredSubmissions.map((sub) => {
-              const meta = SUBJECT_META[sub.subject] || { label: sub.subject, emoji: "📝", gradient: "#ccc" };
+              const meta = SUBJECT_META[sub.subject] || SUBJECT_META.KOREAN;
               const scorePercent = sub.maxScore > 0 ? (sub.totalScore / sub.maxScore) * 100 : 0;
+              const Icon = meta.icon;
               
               return (
-                <Link key={sub.id} href={`/result/${sub.id}`} style={{ display: "block", textDecoration: "none" }}>
-                  <div style={styles.historyCard}>
-                    <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                      <div style={{ ...styles.cardEmojiBox, background: meta.gradient }}>
-                        <span style={{ fontSize: 24 }}>{meta.emoji}</span>
+                <Link key={sub.id} href={`/result/${sub.id}`} className="group block">
+                  <div className="bg-card rounded-3xl p-4 sm:p-5 shadow-sm border border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/20 flex gap-4 sm:gap-5 items-center">
+                    
+                    <div className={cn(
+                      "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-white shadow-inner shrink-0 bg-gradient-to-br",
+                      meta.gradient
+                    )}>
+                      <Icon className="w-6 h-6 sm:w-7 sm:h-7 drop-shadow-sm" />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <div className="text-[11px] sm:text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
+                        <span className={cn(meta.text)}>{meta.label}</span>
+                        <span>•</span>
+                        <span>{new Date(sub.submittedAt).toLocaleDateString()}</span>
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 2 }}>
-                          {meta.label} • {new Date(sub.submittedAt).toLocaleDateString()}
-                        </div>
-                        <div style={{ fontSize: 17, fontWeight: 900, color: "#0f172a", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {sub.title}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#94a3b8" }}>
-                          총 {sub.totalQuestions}문항
-                        </div>
+                      <div className="text-sm sm:text-base font-black text-foreground mb-1 truncate group-hover:text-primary transition-colors">
+                        {sub.title}
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
-                        <div style={{ fontSize: 22, fontWeight: 900, color: scorePercent >= 90 ? "#10b981" : "#3b82f6" }}>
-                          {sub.totalScore}
-                          <span style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8" }}>/{sub.maxScore}</span>
-                        </div>
-                        <span style={{ fontSize: 18, color: "#cbd5e1", marginTop: 2 }}>›</span>
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        총 {sub.totalQuestions}문항
                       </div>
                     </div>
+                    
+                    <div className="flex flex-col items-end shrink-0 pl-2">
+                      <div className="flex items-baseline gap-0.5">
+                        <span className={cn(
+                          "text-xl sm:text-2xl font-black tracking-tighter",
+                          scorePercent >= 90 ? "text-emerald-600" : "text-foreground"
+                        )}>
+                          {sub.totalScore}
+                        </span>
+                        <span className="text-xs sm:text-sm font-bold text-muted-foreground">/{sub.maxScore}</span>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-1 transition-all mt-1" />
+                    </div>
+                    
                   </div>
                 </Link>
               );
@@ -180,126 +233,3 @@ export default function HistoryPage() {
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background: "#f8fafc",
-    display: "flex",
-    flexDirection: "column",
-    position: "relative",
-    overflowX: "hidden",
-  },
-  bgDeco: {
-    position: "fixed",
-    top: 0, left: 0, right: 0,
-    height: 200,
-    background: "linear-gradient(180deg, #e0e7ff 0%, #f8fafc 100%)",
-    zIndex: 0,
-    pointerEvents: "none",
-  },
-  header: {
-    position: "sticky",
-    top: 0,
-    zIndex: 50,
-    background: "rgba(248,250,252,0.9)",
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
-    borderBottom: "1px solid rgba(226,232,240,0.8)",
-  },
-  headerInner: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    height: 64,
-  },
-  main: {
-    flex: 1,
-    position: "relative",
-    zIndex: 1,
-    paddingTop: 24,
-    paddingBottom: 100,
-  },
-
-  /* Filter Control Card */
-  filterControlCard: {
-    background: "#ffffff",
-    borderRadius: 20,
-    padding: "14px 16px",
-    border: "1px solid #cbd5e1",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
-    marginBottom: 18,
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-  subjectFilterGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 8,
-  },
-  subjectGridBtn: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    padding: "10px 6px",
-    borderRadius: 14,
-    cursor: "pointer",
-    border: "1.5px solid #cbd5e1",
-    transition: "all 0.15s",
-    textAlign: "center",
-  },
-  searchBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    background: "#f8fafc",
-    borderRadius: 14,
-    padding: "8px 14px",
-    border: "1px solid #cbd5e1",
-  },
-  searchInput: {
-    flex: 1,
-    border: "none",
-    background: "transparent",
-    fontSize: 14,
-    outline: "none",
-    color: "#0f172a",
-  },
-  clearBtn: {
-    fontSize: 13,
-    color: "#94a3b8",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-  },
-
-  emptyCard: {
-    background: "#fff",
-    borderRadius: 20,
-    padding: "48px 20px",
-    textAlign: "center",
-    border: "1px solid #e2e8f0",
-  },
-
-  historyCard: {
-    background: "#fff",
-    borderRadius: 20,
-    padding: "16px 18px",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
-    border: "1px solid #e2e8f0",
-    transition: "all 0.15s ease",
-  },
-  cardEmojiBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-    flexShrink: 0,
-  },
-};

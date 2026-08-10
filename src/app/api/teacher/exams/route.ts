@@ -9,13 +9,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
   try {
-    const exams = await prisma.exam.findMany({
+    const rawExams = await prisma.exam.findMany({
       orderBy: [{ subject: "asc" }, { id: "asc" }],
       include: {
         questions: { orderBy: { questionNum: "asc" } },
+        submissions: { select: { totalScore: true } },
         _count: { select: { submissions: true } },
       },
     });
+
+    const exams = rawExams.map(exam => {
+      const scores = exam.submissions.map(s => s.totalScore);
+      const submissionCount = scores.length;
+      let avg = 0, max = 0, min = 0;
+      if (submissionCount > 0) {
+        max = Math.max(...scores);
+        min = Math.min(...scores);
+        avg = Math.round((scores.reduce((a, b) => a + b, 0) / submissionCount) * 10) / 10;
+      }
+      return {
+        ...exam,
+        stats: { avg, max, min, submissionCount },
+        submissions: undefined, // remove raw submissions from payload
+      };
+    });
+
     return NextResponse.json({ exams });
   } catch (e: any) {
     console.error("GET /api/teacher/exams Error:", e);

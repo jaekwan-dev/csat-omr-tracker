@@ -14,8 +14,9 @@ export default async function MainPage() {
   });
   const submittedExamIds = new Set(submissions.map((s) => s.examId));
 
-  // 전체 시험 목록 조회
+  // 전체 시험 목록 조회 (출시된 시험만)
   const allExams = await prisma.exam.findMany({
+    where: { isPublished: true },
     orderBy: [{ subject: "asc" }, { id: "asc" }],
     select: { id: true, subject: true, title: true, totalQuestions: true, startNum: true },
   });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, BookOpen, Calculator, Globe, Plus, Minus, FileText, CheckCircle2, AlertCircle, Loader2, Save } from "lucide-react";
 
@@ -51,6 +51,8 @@ const SUBJECT_CONFIG: Record<string, SubjectConfig> = {
   },
 };
 
+const SUBJECT_LABEL: Record<string, string> = { KOREAN: "국어", MATH: "수학", ENGLISH: "영어" };
+
 const SUBJECT_COLOR_HEX: Record<string, string> = {
   KOREAN: "#7c3aed",
   MATH: "#f97316",
@@ -85,9 +87,31 @@ function buildQuestions(subject: string): QuestionInput[] {
 
 /* ── Component ───────────────────────────────────────────────────────── */
 
-export default function NewExamPage() {
+export default function EditExamPage() {
   const router = useRouter();
   const [subject, setSubject] = useState<string>("KOREAN");
+
+  const params = useParams();
+  const examId = params.id;
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [existingPdfUrl, setExistingPdfUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!examId) return;
+    fetch(`/api/teacher/exams/${examId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.exam) {
+          setSubject(d.exam.subject);
+          setTitle(d.exam.title);
+          setQuestions(d.exam.questions);
+          setExistingPdfUrl(d.exam.explanationPdfUrl);
+        }
+        setInitialLoading(false);
+      })
+      .catch(() => setInitialLoading(false));
+  }, [examId]);
+
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState<QuestionInput[]>(() => buildQuestions("KOREAN"));
   const [explanationFile, setExplanationFile] = useState<File | null>(null);
@@ -96,10 +120,7 @@ export default function NewExamPage() {
 
   const cfg = SUBJECT_CONFIG[subject];
 
-  useEffect(() => {
-    setQuestions(buildQuestions(subject));
-  }, [subject]);
-
+  
   function setAnswer(idx: number, answer: number) {
     setQuestions((prev) => {
       const n = [...prev];
@@ -185,11 +206,13 @@ export default function NewExamPage() {
       return;
     }
 
-    const res = await fetch("/api/teacher/exams", {
-      method: "POST",
+    
+    const res = await fetch(`/api/teacher/exams/${examId}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject, title: title.trim(), startNum: cfg.startNum, explanationPdfUrl, questions }),
+      body: JSON.stringify({ title: title.trim(), explanationPdfUrl: explanationPdfUrl || existingPdfUrl, questions }),
     });
+
     setSubmitting(false);
     if (!res.ok) {
       const d = await res.json();
@@ -198,6 +221,16 @@ export default function NewExamPage() {
       router.push("/teacher/exams");
       router.refresh();
     }
+  }
+
+  
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+        <p className="text-sm font-bold text-muted-foreground">시험 정보를 불러오는 중...</p>
+      </div>
+    );
   }
 
   return (
@@ -212,9 +245,11 @@ export default function NewExamPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">새 시험 등록</h1>
-              <p className="text-xs font-medium text-muted-foreground hidden sm:block">새로운 모의고사나 시험을 등록하세요</p>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-bold tracking-tight text-foreground truncate">시험 수정</h1>
+              <p className="text-xs font-medium text-muted-foreground hidden sm:block truncate">
+                {SUBJECT_LABEL[subject]} · 총 {questions.length}문항
+              </p>
             </div>
           </div>
           
@@ -236,7 +271,7 @@ export default function NewExamPage() {
               style={{ background: !title ? "#94a3b8" : colorHex }}
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 hidden sm:block" />}
-              <span>{submitting ? "등록 중..." : "등록하기"}</span>
+              <span>{submitting ? "수정 중..." : "수정하기"}</span>
             </button>
           </div>
         </div>
@@ -255,35 +290,33 @@ export default function NewExamPage() {
               </div>
               <div className="p-5 space-y-6">
                 
+                
                 {/* Subject Selection */}
                 <div className="space-y-3">
-                  <label className="text-sm font-bold text-foreground">과목</label>
+                  <label className="text-sm font-bold text-foreground">과목 (수정 불가)</label>
                   <div className="grid grid-cols-3 gap-2">
                     {Object.entries(SUBJECT_CONFIG).map(([s, c]) => {
                       const isActive = subject === s;
                       const Icon = c.icon;
                       return (
-                        <button
+                        <div
                           key={s}
-                          type="button"
-                          onClick={() => setSubject(s)}
                           className={cn(
                             "flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-200",
                             isActive
                               ? "shadow-sm"
-                              : "bg-secondary/40 border-transparent hover:bg-secondary text-muted-foreground"
+                              : "bg-secondary/40 border-transparent text-muted-foreground opacity-50"
                           )}
                           style={isActive ? { borderColor: SUBJECT_COLOR_HEX[s], background: `${SUBJECT_COLOR_HEX[s]}08`, color: SUBJECT_COLOR_HEX[s] } : undefined}
                         >
                           <Icon className="w-5 h-5" />
                           <span className="text-xs font-bold">{c.label}</span>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
                 </div>
-
-                {/* Subject Hints */}
+{/* Subject Hints */}
                 <div className={cn("rounded-xl px-4 py-3 text-xs font-medium space-y-1.5 border", subjectBgClass)}>
                   <div className="flex justify-between items-center">
                     <span>문항 수</span>
@@ -317,14 +350,17 @@ export default function NewExamPage() {
 
                 {/* PDF */}
                 <div className="space-y-3">
-                  <label htmlFor="explanationFile" className="text-sm font-bold text-foreground">해설지 PDF (선택)</label>
+                  
+                  <label htmlFor="explanationFile" className="text-sm font-bold text-foreground">해설지 PDF (선택, 새 파일 업로드 시 교체됨)</label>
                   <div className="flex items-center justify-center w-full">
                     <label htmlFor="explanationFile" className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-input rounded-xl cursor-pointer bg-background hover:bg-secondary/30 transition-colors">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <FileText className="w-6 h-6 mb-2 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground font-medium">
+                        <p className="text-xs text-muted-foreground font-medium text-center">
                           {explanationFile ? (
                             <span className="text-primary font-bold">{explanationFile.name}</span>
+                          ) : existingPdfUrl ? (
+                            <span className="text-teal-600 font-bold">등록된 해설지가 있습니다.<br/>클릭하여 변경</span>
                           ) : (
                             "클릭하여 PDF 파일 업로드"
                           )}
@@ -339,6 +375,7 @@ export default function NewExamPage() {
                       />
                     </label>
                   </div>
+
                 </div>
 
               </div>

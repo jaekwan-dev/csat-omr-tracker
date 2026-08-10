@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
       maxScore,
     },
     avgScore,
-    submissions: rows,
+    results: rows,
     questionStats,
   });
 }

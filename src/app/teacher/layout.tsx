@@ -16,7 +16,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const navItems = [
     {
       href: "/teacher",
-      label: "성적 대시보드",
+      label: "대시보드",
       icon: (
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="3" width="7" height="9" rx="1.5" />
@@ -29,7 +29,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     },
     {
       href: "/teacher/exams",
-      label: "시험 등록·관리",
+      label: "시험 관리",
       icon: (
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -42,7 +42,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     },
     {
       href: "/teacher/students",
-      label: "학생·PIN 관리",
+      label: "학생 관리",
       icon: (
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />

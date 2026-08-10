@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
     const subject = searchParams.get("subject"); // KOREAN | MATH | ENGLISH (optional)
 
     const exams = await prisma.exam.findMany({
-      where: subject ? { subject: subject as "KOREAN" | "MATH" | "ENGLISH" } : undefined,
+      where: {
+        isPublished: true,
+        ...(subject ? { subject: subject as "KOREAN" | "MATH" | "ENGLISH" } : {})
+      },
       orderBy: [{ subject: "asc" }, { id: "asc" }],
       select: {
         id: true,

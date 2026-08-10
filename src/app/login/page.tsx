@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Loader2, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [pinCode, setPinCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
   const nameRef = useRef<HTMLInputElement>(null);
   const pinRef = useRef<HTMLInputElement>(null);
 
@@ -43,19 +45,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={styles.page}>
-      <div className="anim-fadeInUp login-card" style={styles.formCard}>
-        <div style={styles.formHeader}>
-          <h2 style={styles.formTitle}>로그인</h2>
-          <p style={styles.formSubtitle}>학번, 이름, PIN 번호를 입력하세요</p>
+    <div className="min-h-screen flex items-center justify-center bg-secondary/30 px-4 py-6">
+      <div className="w-full max-w-[400px] bg-card rounded-[28px] p-8 sm:p-9 shadow-xl border border-border flex flex-col gap-7 items-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        <div className="flex flex-col gap-1.5 text-center w-full">
+          <h2 className="text-[26px] font-black text-foreground tracking-tight">로그인</h2>
+          <p className="text-sm font-medium text-muted-foreground">학번, 이름, PIN 번호를 입력하세요</p>
         </div>
 
-        <form onSubmit={handleSubmit} style={styles.form} noValidate>
-          <div style={styles.field}>
-            <label className="label" htmlFor="studentId">학번</label>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full" noValidate>
+          {/* Student ID */}
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-bold text-foreground ml-1" htmlFor="studentId">학번</label>
             <input
               id="studentId"
-              className="input"
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-all"
               type="text"
               inputMode="numeric"
               maxLength={4}
@@ -71,15 +75,16 @@ export default function LoginPage() {
               disabled={loading}
               autoFocus
             />
-            <p style={styles.hint}>학년+반+번호 · 예: 1학년 1반 01번 → 1101</p>
+            <p className="text-xs font-medium text-muted-foreground ml-1">학년+반+번호 · 예: 1학년 1반 01번 → 1101</p>
           </div>
 
-          <div style={styles.field}>
-            <label className="label" htmlFor="name">이름</label>
+          {/* Name */}
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-bold text-foreground ml-1" htmlFor="name">이름</label>
             <input
               id="name"
               ref={nameRef}
-              className="input"
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-all"
               type="text"
               placeholder="홍길동"
               value={name}
@@ -94,12 +99,13 @@ export default function LoginPage() {
             />
           </div>
 
-          <div style={styles.field}>
-            <label className="label" htmlFor="pinCode">PIN 번호 (4자리)</label>
+          {/* PIN */}
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-bold text-foreground ml-1" htmlFor="pinCode">PIN 번호 (4자리)</label>
             <input
               id="pinCode"
               ref={pinRef}
-              className="input"
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-black tracking-widest text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-all"
               type="password"
               inputMode="numeric"
               maxLength={4}
@@ -110,31 +116,32 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Error Message */}
           {error && (
-            <div className="alert alert-error anim-fadeIn">
-              <span>⚠️</span>
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 animate-in fade-in zoom-in-95">
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <button
             type="submit"
-            className="btn btn-primary btn-lg btn-full"
             disabled={loading || !studentId || !name || pinCode.length < 4}
+            className="w-full py-4 mt-2 rounded-2xl bg-primary text-[15px] font-black text-primary-foreground shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2"
           >
             {loading ? (
-              <>
-                <span className="spinner" />
-                로그인 중...
-              </>
+              <><Loader2 className="w-5 h-5 animate-spin" /> 로그인 중...</>
             ) : (
               "로그인"
             )}
           </button>
         </form>
 
-        <div style={styles.footerWrap}>
-          <Link href="/teacher/login" style={styles.teacherLink}>
+        <div className="mt-1 w-full text-center">
+          <Link 
+            href="/teacher/login" 
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-secondary/80 text-[13px] font-bold text-primary hover:bg-secondary transition-colors"
+          >
             교사용 로그인 →
           </Link>
         </div>
@@ -142,72 +149,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#f0f4ff",
-    padding: "24px 16px",
-  },
-  formCard: {
-    width: "100%",
-    maxWidth: 400,
-    background: "#fff",
-    borderRadius: 28,
-    padding: "40px 36px",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 24,
-    border: "1px solid #e2e8f0",
-  },
-  formHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-    textAlign: "center",
-  },
-  formTitle: {
-    fontSize: 26,
-    fontWeight: 900,
-    color: "#0f172a",
-    letterSpacing: "-0.03em",
-  },
-  formSubtitle: {
-    fontSize: 14,
-    color: "#64748b",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 18,
-  },
-  field: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-  },
-  hint: {
-    marginTop: 4,
-    fontSize: 12,
-    color: "#94a3b8",
-  },
-  footerWrap: {
-    marginTop: 8,
-    display: "flex",
-    justifyContent: "center",
-  },
-  teacherLink: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#3b82f6",
-    textDecoration: "none",
-    padding: "8px 16px",
-    borderRadius: 999,
-    background: "#eff6ff",
-    transition: "all 0.2s",
-  },
-};

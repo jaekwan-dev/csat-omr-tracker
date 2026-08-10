@@ -194,7 +194,7 @@ export default function StudentManagementPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-6 pb-24">
+    <div className="mx-auto max-w-5xl px-4 pt-6 pb-12">
       {/* Mobile-Friendly Header */}
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex-1">
@@ -395,7 +395,7 @@ export default function StudentManagementPage() {
       {/* Responsive Modal (Student Add/Edit) */}
       {isModalOpen && (
         <div
-          className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-4"
           onClick={() => setIsModalOpen(false)}
         >
           <div
@@ -508,7 +508,7 @@ export default function StudentManagementPage() {
       {/* CSV Bulk Upload Modal */}
       {isCsvModalOpen && (
         <div
-          className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-4"
           onClick={() => setIsCsvModalOpen(false)}
         >
           <div

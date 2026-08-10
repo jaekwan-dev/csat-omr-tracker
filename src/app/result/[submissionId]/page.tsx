@@ -2,23 +2,35 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { ChevronLeft, FileText, CheckCircle2, XCircle, Home, Download, BarChart3, Target, Award, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ submissionId: string }>;
 }
 
-const SUBJECT_LABEL: Record<string, string> = { KOREAN: "국어", MATH: "수학", ENGLISH: "영어" };
-
-const SUBJECT_GRADIENT: Record<string, string> = {
-  KOREAN: "linear-gradient(145deg, #667eea 0%, #764ba2 100%)",
-  MATH: "linear-gradient(145deg, #f97316 0%, #7c3aed 100%)",
-  ENGLISH: "linear-gradient(145deg, #06b6d4 0%, #3b82f6 100%)",
-};
-
-const SUBJECT_COLOR: Record<string, string> = {
-  KOREAN: "#764ba2",
-  MATH: "#7c3aed",
-  ENGLISH: "#3b82f6",
+const SUBJECT_META: Record<string, { label: string; color: string; bgLight: string; text: string; gradient: string }> = {
+  KOREAN: {
+    label: "국어",
+    color: "bg-purple-400",
+    bgLight: "bg-purple-50",
+    text: "text-purple-500",
+    gradient: "from-purple-400 to-purple-500",
+  },
+  MATH: {
+    label: "수학",
+    color: "bg-orange-400",
+    bgLight: "bg-orange-50",
+    text: "text-orange-500",
+    gradient: "from-orange-400 to-orange-500",
+  },
+  ENGLISH: {
+    label: "영어",
+    color: "bg-blue-400",
+    bgLight: "bg-blue-50",
+    text: "text-blue-500",
+    gradient: "from-blue-400 to-blue-500",
+  },
 };
 
 export default async function ResultPage({ params }: PageProps) {
@@ -36,309 +48,249 @@ export default async function ResultPage({ params }: PageProps) {
 
   if (!submission || submission.studentId !== session.studentId) redirect("/");
 
+  const allSubmissions = await prisma.submission.findMany({
+    where: { examId: submission.examId },
+    select: { answers: true, totalScore: true },
+  });
+
+  const totalExamSubmissions = allSubmissions.length;
+  const rank = allSubmissions.filter((s) => s.totalScore > submission.totalScore).length + 1;
+
   const answers = submission.answers as Record<string, number>;
   const results = submission.exam.questions.map((q) => {
     const myAnswer = answers[String(q.questionNum)] ?? 0;
     const isCorrect = myAnswer === q.correctAnswer;
-    return { questionNum: q.questionNum, correctAnswer: q.correctAnswer, myAnswer, isCorrect, score: q.score, earnedScore: isCorrect ? q.score : 0 };
+    
+    let qCorrectCount = 0;
+    if (totalExamSubmissions > 0) {
+      for (const sub of allSubmissions) {
+        const subAnswers = sub.answers as Record<string, number>;
+        if (subAnswers[String(q.questionNum)] === q.correctAnswer) {
+          qCorrectCount++;
+        }
+      }
+    }
+    const accuracy = totalExamSubmissions > 0 ? Math.round((qCorrectCount / totalExamSubmissions) * 100) : 0;
+
+    return { 
+      questionNum: q.questionNum, 
+      correctAnswer: q.correctAnswer, 
+      myAnswer, 
+      isCorrect, 
+      score: q.score, 
+      earnedScore: isCorrect ? q.score : 0,
+      accuracy
+    };
   });
 
   const correctCount = results.filter((r) => r.isCorrect).length;
-  const wrongCount = results.filter((r) => !r.isCorrect).length;
+  const wrongCount = results.filter((r) => !r.isCorrect && r.myAnswer !== 0).length;
   const unansweredCount = results.filter((r) => r.myAnswer === 0).length;
   const maxScore = results.reduce((s, r) => s + r.score, 0);
   const scorePercent = maxScore > 0 ? Math.round((submission.totalScore / maxScore) * 100) : 0;
 
-  const gradient = SUBJECT_GRADIENT[submission.exam.subject] ?? SUBJECT_GRADIENT.ENGLISH;
-  const color = SUBJECT_COLOR[submission.exam.subject] ?? "#3b82f6";
-  const subjectLabel = SUBJECT_LABEL[submission.exam.subject] ?? submission.exam.subject;
+  const meta = SUBJECT_META[submission.exam.subject] ?? SUBJECT_META.ENGLISH;
 
   return (
-    <div style={styles.page}>
-      {/* Gradient Hero Header */}
-      <div style={{ ...styles.heroHeader, background: gradient }}>
-        <div className="container" style={styles.heroNav}>
-          <Link href="/" className="btn btn-white btn-sm">← 홈</Link>
-          <span style={styles.heroNavTitle}>채점 결과</span>
-          <div style={{ width: 72 }} />
+    <div className="min-h-screen bg-[#fafafa] flex flex-col pb-12 selection:bg-black selection:text-white">
+      
+      {/* ─── Minimalist Header ─── */}
+      <header className="sticky top-0 z-50 bg-[#fafafa]/80 backdrop-blur-xl border-b border-black/5">
+        <div className="container max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link 
+            href="/" 
+            className="group flex items-center justify-center w-10 h-10 rounded-full bg-black/5 hover:bg-black/10 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5 text-black/70 group-hover:text-black transition-colors" />
+          </Link>
+          <span className="text-sm font-bold tracking-widest text-black/80">RESULT</span>
+          <div className="w-10" />
         </div>
+      </header>
 
-        <div className="container" style={styles.heroBody}>
-          {/* Score Circle */}
-          <div className="anim-bounceIn" style={styles.scoreCircle}>
-            <div style={styles.scoreNum}>{submission.totalScore}</div>
-            <div style={styles.scoreMax}>/ {maxScore}</div>
+      {/* ─── Premium Hero Section ─── */}
+      <div className="container max-w-4xl mx-auto px-6 pt-16 pb-12 relative">
+        <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
+          
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/5 border border-black/10 mb-8 shadow-sm">
+            <span className={cn("w-2.5 h-2.5 rounded-full animate-pulse", meta.color)} />
+            <span className="text-xs font-bold tracking-widest uppercase text-black/70">{meta.label}</span>
           </div>
 
-          <div style={styles.heroInfo}>
-            <div style={styles.heroSubject}>
-              {subjectLabel} · {submission.exam.title}
-            </div>
-            <div style={styles.heroStudent}>
-              {session.name} · {session.grade}학년 {session.classNum}반
-            </div>
-            <div style={styles.heroDate}>
-              {new Date(submission.submittedAt).toLocaleString("ko-KR", {
-                month: "numeric", day: "numeric",
-                hour: "2-digit", minute: "2-digit",
-              })} 제출
-            </div>
-            {submission.exam.explanationPdfUrl && (
-              <div style={{ marginTop: 8 }}>
-                <a href={submission.exam.explanationPdfUrl} target="_blank" rel="noreferrer" style={{ display: "inline-block", padding: "6px 12px", background: "rgba(255,255,255,0.2)", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-                  📄 해설지 다운로드
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
+          <h1 className="text-3xl sm:text-5xl font-black text-black tracking-tight leading-[1.1] mb-4 max-w-2xl">
+            {submission.exam.title}
+          </h1>
+          
+          <p className="text-sm font-semibold text-black/50 tracking-wide mb-12">
+            {session.name} ({session.grade}학년 {session.classNum}반) <span className="mx-2 text-black/20">|</span> {new Date(submission.submittedAt).toLocaleDateString()} 제출
+          </p>
 
-        {/* Stats Row */}
-        <div style={styles.statsStrip}>
-          {[
-            { label: "정답", value: correctCount, color: "#10b981" },
-            { label: "오답", value: wrongCount, color: "#ef4444" },
-            { label: "미응답", value: unansweredCount, color: "#94a3b8" },
-            { label: "정답률", value: `${scorePercent}%`, color: "#fff" },
-          ].map((s, i) => (
-            <div key={i} style={styles.statItem}>
-              <div style={{ ...styles.statValue, color: s.color }}>{s.value}</div>
-              <div style={styles.statLabel}>{s.label}</div>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent blur-3xl -z-10 rounded-full scale-150 opacity-50" />
+            <div className="flex items-baseline gap-2">
+              <span className="text-5xl sm:text-6xl font-black text-black leading-none tracking-tighter tabular-nums drop-shadow-sm">
+                {submission.totalScore}
+              </span>
+              <span className="text-lg sm:text-xl font-bold text-black/30 tracking-tighter">
+                / {maxScore}
+              </span>
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
-      {/* Table */}
-      <main className="container" style={styles.main}>
-        <div style={styles.tableCard}>
-          <div style={styles.tableTitle}>📋 문항별 채점 결과</div>
+      <main className="container max-w-4xl mx-auto px-6 flex-1 flex flex-col gap-16">
+        
+        {/* ─── Stat Cards ─── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-12 duration-700 delay-150 fill-mode-both ease-out">
+          {[
+            { label: "정답", value: correctCount, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" },
+            { label: "오답", value: wrongCount, icon: XCircle, color: "text-rose-500", bg: "bg-rose-50" },
+            { label: "시험 등수", value: `${rank}등`, icon: Award, color: "text-blue-500", bg: "bg-blue-50" },
+            { label: "정답률", value: `${scorePercent}%`, icon: Target, color: "text-black", bg: "bg-black/5" },
+          ].map((s, i) => {
+            const Icon = s.icon;
+            return (
+              <div key={i} className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-black/[0.03] flex flex-col items-center text-center transition-transform hover:-translate-y-1 duration-300">
+                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-4", s.bg, s.color)}>
+                  <Icon className="w-6 h-6" />
+                </div>
+                <div className={cn("text-3xl font-black mb-1 tabular-nums tracking-tight", s.color)}>{s.value}</div>
+                <div className="text-xs font-bold text-black/40 uppercase tracking-widest">{s.label}</div>
+              </div>
+            );
+          })}
+        </div>
 
-          <table className="omr-table" style={{ tableLayout: "fixed" }}>
-            <colgroup>
-              <col style={{ width: 52 }} />
-              <col />
-              <col />
-              <col style={{ width: 56 }} />
-              <col style={{ width: 56 }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th style={{ background: gradient }}>번호</th>
-                <th style={{ background: gradient }}>내 답안</th>
-                <th style={{ background: gradient }}>정답</th>
-                <th style={{ background: gradient }}>결과</th>
-                <th style={{ background: gradient }}>배점</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((r, idx) => (
-                <tr
-                  key={r.questionNum}
-                  style={{
-                    background: r.isCorrect
-                      ? "#f0fdf4"
-                      : r.myAnswer === 0
-                      ? "#f8faff"
-                      : "#fff5f5",
-                    opacity: 0,
-                    animation: `fadeInUp 0.25s ease ${idx * 0.018}s forwards`,
-                  }}
-                >
-                  <td style={{ fontWeight: 700, color: "#374151" }}>{r.questionNum}</td>
-                  <td>
+        {/* ─── Action Banner ─── */}
+        {submission.exam.explanationPdfUrl && (
+          <div className="w-full bg-black rounded-[2rem] p-8 sm:p-10 shadow-[0_20px_40px_rgb(0,0,0,0.15)] flex flex-col sm:flex-row items-center justify-between gap-6 animate-in fade-in zoom-in-95 duration-700 delay-300 fill-mode-both">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                <FileText className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white tracking-tight">상세 해설지 제공</h3>
+                <p className="text-sm font-medium text-white/60 mt-1">오답 노트를 작성하고 부족한 부분을 보완하세요.</p>
+              </div>
+            </div>
+            <a 
+              href={submission.exam.explanationPdfUrl} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-white/90 text-black text-sm font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 shrink-0 hover:scale-105 active:scale-100"
+            >
+              <Download className="w-4 h-4" />
+              다운로드
+            </a>
+          </div>
+        )}
+
+        {/* ─── Detailed Results List (Replaces Table) ─── */}
+        <div className="bg-white rounded-[2.5rem] p-4 sm:p-10 shadow-[0_8px_40px_rgb(0,0,0,0.03)] border border-black/[0.03] animate-in fade-in slide-in-from-bottom-12 duration-700 delay-500 fill-mode-both overflow-hidden">
+          <div className="flex items-center gap-3 mb-6 sm:mb-10 pl-2">
+            <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-black/40" />
+            <h2 className="text-lg sm:text-xl font-black text-black tracking-tight">문항별 상세 분석</h2>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:gap-3">
+            {/* List Header */}
+            <div className="flex items-center px-1 sm:px-4 py-2 text-[10px] sm:text-xs font-bold text-black/40 uppercase tracking-widest border-b border-black/5 mb-2">
+              <div className="w-8 sm:w-16 text-center">No.</div>
+              <div className="flex-1 flex justify-center gap-4 sm:gap-20">
+                <div className="w-12 sm:w-16 text-center">내 답안</div>
+                <div className="w-12 sm:w-16 text-center">정답</div>
+              </div>
+              <div className="w-12 sm:w-16 text-right">배점</div>
+              <div className="w-14 sm:w-16 text-right">정답률</div>
+            </div>
+
+            {/* List Body */}
+            {results.map((r, idx) => (
+              <div 
+                key={r.questionNum} 
+                className={cn(
+                  "flex items-center px-1 sm:px-4 py-3 sm:py-4 rounded-2xl transition-colors",
+                  r.isCorrect ? "hover:bg-emerald-50/50" : r.myAnswer === 0 ? "hover:bg-black/5" : "hover:bg-rose-50/50"
+                )}
+              >
+                {/* Number */}
+                <div className="w-8 sm:w-16 flex flex-col items-center">
+                  <span className="text-sm sm:text-base font-black text-black">{r.questionNum}</span>
+                </div>
+
+                {/* Answers Compare */}
+                <div className="flex-1 flex items-center justify-center gap-4 sm:gap-20">
+                  <div className="w-12 sm:w-16 flex items-center justify-center">
                     {r.myAnswer === 0 ? (
-                      <span style={{ color: "#94a3b8", fontSize: 12 }}>미응답</span>
+                      <span className="text-[10px] sm:text-[11px] font-bold text-black/30 bg-black/5 px-1.5 py-1 rounded-md">미응답</span>
                     ) : (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          width: 30, height: 30,
-                          borderRadius: "50%",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 13, fontWeight: 800,
-                          background: r.isCorrect ? "#d1fae5" : "#fee2e2",
-                          color: r.isCorrect ? "#059669" : "#dc2626",
-                        }}
-                      >
+                      <span className={cn(
+                        "inline-flex w-8 h-8 sm:w-10 sm:h-10 items-center justify-center rounded-xl text-xs sm:text-sm font-black shadow-sm",
+                        r.isCorrect ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                      )}>
                         {r.myAnswer}
                       </span>
                     )}
-                  </td>
-                  <td>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        width: 30, height: 30,
-                        borderRadius: "50%",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 13, fontWeight: 800,
-                        background: "#d1fae5",
-                        color: "#059669",
-                      }}
-                    >
+                  </div>
+                  
+                  {/* Result Icon Arrow */}
+                  <div className="hidden sm:flex items-center justify-center text-black/20">
+                    {r.isCorrect ? (
+                      <ArrowRight className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-rose-300" />
+                    )}
+                  </div>
+
+                  <div className="w-12 sm:w-16 flex items-center justify-center">
+                    <span className="inline-flex w-8 h-8 sm:w-10 sm:h-10 items-center justify-center rounded-xl text-xs sm:text-sm font-black bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200 shadow-sm">
                       {r.correctAnswer}
                     </span>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: 16 }}>
-                      {r.isCorrect ? "✅" : r.myAnswer === 0 ? "—" : "❌"}
-                    </span>
-                  </td>
-                  <td style={{ color: "#64748b", fontSize: 13 }}>{r.score}점</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={3} style={{ textAlign: "right", fontWeight: 700, color: "#374151", fontSize: 14, padding: "14px 8px" }}>
-                  최종 점수
-                </td>
-                <td colSpan={2} style={{ fontWeight: 900, fontSize: 20, color, padding: "14px 8px" }}>
-                  {submission.totalScore}점
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+                  </div>
+                </div>
+
+                {/* Score */}
+                <div className="w-12 sm:w-16 flex flex-col items-end justify-center">
+                  <span className={cn(
+                    "text-xs sm:text-sm font-black",
+                    r.isCorrect ? "text-emerald-600" : "text-black/30"
+                  )}>
+                    {r.isCorrect ? `+${r.score}` : '0'}
+                  </span>
+                  <span className="hidden sm:inline text-[10px] font-bold text-black/30 mt-0.5">{r.score}점</span>
+                </div>
+
+                {/* Accuracy */}
+                <div className="w-14 sm:w-16 flex flex-col items-end justify-center">
+                  <span className="text-xs sm:text-sm font-black text-black/70">{r.accuracy}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer Total */}
+          <div className="mt-8 pt-8 border-t border-black/5 flex items-center justify-between px-4">
+            <span className="text-sm font-bold text-black/40 uppercase tracking-widest">Final Score</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black text-black tracking-tighter tabular-nums">{submission.totalScore}</span>
+              <span className="text-sm font-bold text-black/30">점</span>
+            </div>
+          </div>
         </div>
 
-        <div className="anim-fadeInUp" style={styles.actions}>
-          <Link href="/" className="btn btn-primary">
-            🏠 홈으로
+        {/* ─── Bottom Actions ─── */}
+        <div className="flex justify-center pt-8 pb-10">
+          <Link 
+            href="/" 
+            className="group flex items-center gap-3 px-10 py-5 bg-black text-white rounded-full text-sm font-bold shadow-[0_10px_30px_rgb(0,0,0,0.15)] hover:shadow-[0_10px_40px_rgb(0,0,0,0.25)] hover:-translate-y-1 active:translate-y-0 transition-all"
+          >
+            <Home className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" /> 
+            <span>홈으로 돌아가기</span>
           </Link>
         </div>
+        
       </main>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background: "#f8faff",
-    display: "flex",
-    flexDirection: "column",
-  },
-  heroHeader: {
-    paddingBottom: 0,
-  },
-  heroNav: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 16,
-    paddingBottom: 20,
-  },
-  heroNavTitle: {
-    fontSize: 16,
-    fontWeight: 800,
-    color: "#fff",
-  },
-  heroBody: {
-    display: "flex",
-    alignItems: "center",
-    gap: 24,
-    paddingBottom: 24,
-    flexWrap: "wrap",
-  },
-  scoreCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: "50%",
-    background: "rgba(255,255,255,0.2)",
-    backdropFilter: "blur(8px)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    border: "3px solid rgba(255,255,255,0.4)",
-  },
-  scoreNum: {
-    fontSize: 32,
-    fontWeight: 900,
-    color: "#fff",
-    lineHeight: 1,
-    fontVariantNumeric: "tabular-nums",
-  },
-  scoreMax: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.75)",
-    fontVariantNumeric: "tabular-nums",
-  },
-  heroInfo: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-  },
-  heroSubject: {
-    fontSize: 20,
-    fontWeight: 900,
-    color: "#fff",
-  },
-  heroStudent: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
-    fontWeight: 600,
-  },
-  heroDate: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.6)",
-  },
-  statsStrip: {
-    background: "rgba(0,0,0,0.15)",
-    backdropFilter: "blur(8px)",
-    display: "flex",
-    justifyContent: "space-around",
-    padding: "16px 20px",
-  },
-  statItem: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 4,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 900,
-    lineHeight: 1,
-    fontVariantNumeric: "tabular-nums",
-  },
-  statLabel: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.65)",
-    fontWeight: 600,
-    letterSpacing: "0.04em",
-  },
-  main: {
-    flex: 1,
-    paddingTop: 24,
-    paddingBottom: 60,
-    display: "flex",
-    flexDirection: "column",
-    gap: 20,
-  },
-  tableCard: {
-    background: "#fff",
-    borderRadius: 20,
-    overflow: "hidden",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.07)",
-    border: "1px solid #e2e8f0",
-  },
-  tableTitle: {
-    padding: "18px 20px 14px",
-    fontSize: 15,
-    fontWeight: 700,
-    color: "#0f172a",
-    borderBottom: "1px solid #f1f5f9",
-  },
-  actions: {
-    display: "flex",
-    gap: 12,
-    justifyContent: "center",
-    flexWrap: "wrap",
-    paddingTop: 8,
-  },
-};
