@@ -60,19 +60,19 @@ export default function PinResetModal({ isOpen, onSuccess }: PinResetModalProps)
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-slate-900/75 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-card w-full max-w-[420px] rounded-[32px] p-8 sm:p-10 shadow-2xl border border-border flex flex-col items-center animate-in fade-in zoom-in-95 duration-300 fill-mode-both">
+    <div className="fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-zinc-950 w-full max-w-[420px] rounded-[32px] p-8 sm:p-10 shadow-2xl border border-border flex flex-col items-center animate-in fade-in zoom-in-95 duration-300 fill-mode-both">
         
         {/* Header Icon */}
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500 to-red-600 shadow-[0_8px_20px_rgba(225,29,72,0.3)] flex items-center justify-center text-white mb-6">
           <Lock className="w-8 h-8" />
         </div>
         
-        <h2 className="text-2xl font-black text-foreground tracking-tight mb-2 text-center">
+        <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight mb-2 text-center">
           초기 PIN 번호 변경
         </h2>
-        <p className="text-sm text-muted-foreground text-center mb-8 leading-relaxed max-w-[280px]">
-          보안을 위해 <strong>0000 이외의 새로운 4자리 PIN 번호</strong>를 설정해 주세요.
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center mb-8 leading-relaxed max-w-[280px]">
+          보안을 위해 <strong className="text-zinc-800 dark:text-zinc-200">0000 이외의 새로운 4자리 PIN 번호</strong>를 설정해 주세요.
         </p>
 
         {errorMsg && (
@@ -84,7 +84,7 @@ export default function PinResetModal({ isOpen, onSuccess }: PinResetModalProps)
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-foreground ml-1">새 PIN 번호 (4자리 숫자)</label>
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">새 PIN 번호 (4자리 숫자)</label>
             <input
               type="password"
               inputMode="numeric"
@@ -93,22 +93,22 @@ export default function PinResetModal({ isOpen, onSuccess }: PinResetModalProps)
               value={newPin}
               onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
               required
-              className="w-full px-4 py-3.5 rounded-2xl border border-input bg-background text-xl font-black tracking-widest text-center text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xl font-black tracking-widest text-center text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 transition-all shadow-sm"
               disabled={isSubmitting}
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-foreground ml-1">새 PIN 번호 확인</label>
+          <div className="flex flex-col gap-1.5 mb-2">
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">새 PIN 번호 확인</label>
             <input
               type="password"
               inputMode="numeric"
               maxLength={4}
-              placeholder="새 PIN 번호 재입력"
+              placeholder="다시 한 번 입력"
               value={confirmPin}
               onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
               required
-              className="w-full px-4 py-3.5 rounded-2xl border border-input bg-background text-xl font-black tracking-widest text-center text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xl font-black tracking-widest text-center text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 transition-all shadow-sm"
               disabled={isSubmitting}
             />
           </div>

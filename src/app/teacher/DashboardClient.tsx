@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useMemo, Fragment } from "react";
 import { BookOpen, Calculator, Globe } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
-interface Exam { id: number; subject: string; title: string; totalQuestions: number; }
+// Exam interface is defined below
 interface HistoryItem { examId: number; title: string; subject: string; totalScore: number; maxScore: number; percent: number; rank: number; }
 interface ResultRow {
   studentId: string; studentName: string; grade: number; classNum: number;
@@ -25,75 +26,68 @@ const SUBJECT_COLOR_HEX: Record<string, string> = {
   ENGLISH: "#60a5fa" // blue-400
 };
 
-/* ── Question Stats Section ──────────────────────────────────────────── */
-function QuestionStatsSection({ stats, colorHex }: { stats: QuestionStat[]; colorHex: string }) {
+/* ── Question Heatmap Section ──────────────────────────────────────────── */
+function QuestionHeatmapSection({ stats, colorHex }: { stats: QuestionStat[]; colorHex: string }) {
   const [showAll, setShowAll] = useState(false);
-
-  const displayed = showAll ? stats : stats.slice(0, 15);
+  const displayed = showAll ? stats : stats.slice(0, 20); // Show up to 20 initially
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Legend / Filter */}
-      <div className="flex items-center gap-3 flex-wrap mb-2">
-        <span className="text-sm font-bold text-foreground mr-2">빠른 필터: </span>
-        {[
-          { label: "전체보기", color: "bg-secondary text-secondary-foreground" },
-          { label: "오답률 50%↑ (위험)", color: "bg-red-50 text-red-600 border-red-100" },
-          { label: "오답률 20~50% (주의)", color: "bg-amber-50 text-amber-600 border-amber-100" },
-        ].map((f) => (
-          <button key={f.label} className={cn("px-3.5 py-1.5 rounded-full border text-[13px] font-bold transition-all hover:opacity-80", f.color)}>
-            {f.label}
-          </button>
-        ))}
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-sm font-bold text-foreground mr-2">상태 범례: </span>
+        <div className="flex items-center gap-1.5 bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-[12px] font-bold border border-red-100">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span> 50% 미만 (위험)
+        </div>
+        <div className="flex items-center gap-1.5 bg-amber-50 text-amber-600 px-3 py-1.5 rounded-full text-[12px] font-bold border border-amber-100">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span> 50~79% (주의)
+        </div>
+        <div className="flex items-center gap-1.5 bg-teal-50 text-teal-600 px-3 py-1.5 rounded-full text-[12px] font-bold border border-teal-100">
+          <span className="w-2.5 h-2.5 rounded-full bg-teal-400"></span> 80% 이상 (안전)
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border shadow-sm">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b-2 border-border/60">
-              {["번호", "정답", "배점", "정답률"].map((h) => (
-                <th key={h} className="px-5 py-4 text-[13px] font-bold text-muted-foreground text-left whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {displayed.map((q) => {
-              const isHard = q.correctRate < 50;
-              const isMedium = q.correctRate >= 50 && q.correctRate < 80;
-              const rowBg = isHard ? "bg-red-50/30" : isMedium ? "bg-amber-50/30" : "bg-card";
-              const barColor = isHard ? "bg-red-400" : isMedium ? "bg-amber-400" : "bg-teal-400";
-              const textBarColor = isHard ? "text-red-500" : isMedium ? "text-amber-500" : "text-teal-500";
-              return (
-                <tr key={q.questionNum} className={cn("border-b border-border/40 last:border-0 hover:bg-muted/30 transition-colors", rowBg)}>
-                  <td className={cn("px-5 py-3 font-black text-sm", isHard ? "text-red-600" : "text-foreground")}>
-                    {q.questionNum}
-                  </td>
-                  <td className="px-5 py-3">
-                    <span
-                      className="inline-flex w-7 h-7 rounded-full items-center justify-center font-bold text-[13px]"
-                      style={{ background: `${colorHex}15`, color: colorHex }}
-                    >
-                      {q.correctAnswer}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-muted-foreground text-[13px] font-medium">{q.score}점</td>
-                  <td className="px-5 py-3">
-                    <span className={cn("text-[13px] font-black", textBarColor)}>{q.correctRate}%</span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+        {displayed.map((q) => {
+          const isHard = q.correctRate < 50;
+          const isMedium = q.correctRate >= 50 && q.correctRate < 80;
+          const bgClass = isHard ? "bg-red-50 border-red-200" : isMedium ? "bg-amber-50 border-amber-200" : "bg-card border-border hover:border-teal-200";
+          const textClass = isHard ? "text-red-700" : isMedium ? "text-amber-700" : "text-foreground";
+          const rateClass = isHard ? "text-red-600" : isMedium ? "text-amber-600" : "text-teal-600";
+
+          return (
+            <div key={q.questionNum} className={cn("flex flex-col p-4 rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md", bgClass)}>
+              <div className="flex items-center justify-between mb-2">
+                <span className={cn("text-lg font-black", textClass)}>{q.questionNum}번</span>
+                <span className="text-[10px] font-bold text-muted-foreground bg-white/50 px-2 py-0.5 rounded-md border border-black/5">
+                  {q.score}점
+                </span>
+              </div>
+              <div className="flex items-end justify-between mt-auto pt-2">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-muted-foreground/70 mb-0.5">정답</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-white text-foreground shadow-sm border border-black/5">
+                    {q.correctAnswer}
+                  </span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-bold text-muted-foreground/70 mb-0.5">정답률</span>
+                  <span className={cn("text-xl font-black leading-none tracking-tight", rateClass)}>
+                    {q.correctRate}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {stats.length > 15 && (
+      {stats.length > 20 && (
         <button
           onClick={() => setShowAll((v) => !v)}
           className="self-center mt-2 px-6 py-2.5 rounded-full text-[13px] font-bold bg-background border shadow-sm transition-all hover:bg-accent"
           style={{ borderColor: `${colorHex}44`, color: colorHex }}
         >
-          {showAll ? "▲ 통계 접기" : `▼ 전체 ${stats.length}문항 보기`}
+          {showAll ? "▲ 히트맵 접기" : `▼ 전체 ${stats.length}문항 히트맵 보기`}
         </button>
       )}
     </div>
@@ -173,9 +167,22 @@ function ScoreLineChart({ history }: { history?: HistoryItem[] }) {
   );
 }
 
+interface Exam {
+  id: number;
+  subject: string;
+  title: string;
+  totalQuestions: number;
+  isPublished: boolean;
+  stats: { avg: number; max: number; min: number; submissionCount: number };
+}
+
 // ── Main Dashboard Client ─────────────────────────────────
-export default function DashboardClient({ exams }: { exams: Exam[] }) {
+export default function DashboardClient({ initialExams }: { initialExams: Exam[] }) {
+  const router = useRouter();
+  const [exams, setExams] = useState<Exam[]>(initialExams);
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>("KOREAN");
+  type TabType = "SUMMARY" | "QUESTIONS" | "STUDENTS";
+  const [activeTab, setActiveTab] = useState<TabType>("SUMMARY");
   const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -186,10 +193,33 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
   const [history, setHistory] = useState<HistoryItem[] | null>(null);
   const [historyStudentName, setHistoryStudentName] = useState("");
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const filteredExams = useMemo(() => {
     return exams.filter((e) => e.subject === selectedSubjectFilter);
   }, [exams, selectedSubjectFilter]);
+
+  async function handleDelete(exam: Exam) {
+    if (!confirm(`"${exam.title}" 시험을 삭제하시겠습니까?\n제출된 ${exam.stats.submissionCount}개의 답안도 함께 삭제됩니다.`)) return;
+    setDeletingId(exam.id);
+    const r = await fetch(`/api/teacher/exams/${exam.id}`, { method: "DELETE" });
+    if (r.ok) {
+      setExams(prev => prev.filter(e => e.id !== exam.id));
+      if (selectedExamId === exam.id) setSelectedExamId(null);
+    }
+    setDeletingId(null);
+  }
+
+  async function togglePublish(exam: Exam) {
+    const r = await fetch(`/api/teacher/exams/${exam.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isPublished: !exam.isPublished })
+    });
+    if (r.ok) {
+      setExams((prev) => prev.map(e => e.id === exam.id ? { ...e, isPublished: !e.isPublished } : e));
+    }
+  }
 
   useEffect(() => {
     if (filteredExams.length > 0) {
@@ -270,10 +300,19 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-6 pb-12">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">성적 대시보드</h1>
-        <p className="text-sm text-muted-foreground mt-1">시험별 성적 통계와 학생별 점수를 확인하세요.</p>
+      {/* Header Row */}
+      <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">시험 및 성적 관리</h1>
+          <p className="text-sm text-muted-foreground mt-1">시험을 새로 출제·관리하고 학생들의 성적 통계를 한눈에 확인하세요.</p>
+        </div>
+        <button
+          onClick={() => router.push("/teacher/exams/new")}
+          className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity"
+        >
+          <span>➕</span>
+          <span>새 시험 등록</span>
+        </button>
       </div>
 
       {/* Smart Filter Card */}
@@ -309,9 +348,12 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
         </div>
 
         {/* 2. Exam List */}
-        {filteredExams.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <div className="text-sm font-bold text-foreground mb-1 px-1">시험 선택</div>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between px-1 mb-1">
+            <span className="text-sm font-bold text-foreground">시험 선택</span>
+          </div>
+          
+          {filteredExams.length > 0 ? (
             <div className="flex flex-col gap-2 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
               {filteredExams.map((e) => {
                 const isActive = selectedExamId === e.id;
@@ -341,13 +383,12 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
                 );
               })}
             </div>
-          </div>
-        )}
-        {filteredExams.length === 0 && (
-          <div className="bg-secondary/50 rounded-2xl p-4 text-center text-sm font-medium text-muted-foreground border border-transparent">
-            등록된 {SUBJECT_LABEL[selectedSubjectFilter]} 시험이 없습니다.
-          </div>
-        )}
+          ) : (
+            <div className="bg-secondary/50 rounded-2xl p-4 text-center text-sm font-medium text-muted-foreground border border-transparent mt-2">
+              등록된 {SUBJECT_LABEL[selectedSubjectFilter]} 시험이 없습니다.
+            </div>
+          )}
+        </div>
 
         {/* 3. Class Filter */}
         {data && classNumbers.length > 0 && (
@@ -370,29 +411,99 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
         )}
       </div>
 
-      {/* KPI Metric Summary */}
+      {/* KPI Metric Summary & Exam Management */}
       {data && !loading && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
-          {[
-            { label: "선택 시험", value: `${data.exam.title}`, icon: "📄" },
-            { label: "총 응시자", value: `${rows.length}명`, icon: "👥" },
-            { label: "평균 점수", value: `${data.avgScore}점`, isAccent: true, icon: "📊" },
-            { label: "최고 점수", value: `${rows[0]?.totalScore ?? 0}점`, icon: "🏆" },
-          ].map((k) => (
-            <div key={k.label} className={cn(
-              "flex flex-col p-4 sm:p-5 rounded-3xl border shadow-sm transition-all duration-300",
-              k.isAccent ? "border-transparent text-white shadow-md" : "bg-card border-border"
-            )} style={k.isAccent ? { background: `linear-gradient(135deg, ${subjectColor}ee, ${subjectColor})` } : undefined}>
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <span className={cn("text-xs sm:text-sm font-bold", k.isAccent ? "text-white/90" : "text-muted-foreground")}>{k.label}</span>
-                <span className={cn("text-lg", k.isAccent ? "opacity-90" : "opacity-50")}>{k.icon}</span>
+        <>
+          {(() => {
+            const selectedExamState = exams.find(e => e.id === selectedExamId);
+            if (!selectedExamState) return null;
+            return (
+              <>
+              <div className="flex items-center justify-between flex-wrap gap-4 mb-4 bg-card p-4 rounded-2xl border shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-black text-foreground">{selectedExamState.title}</span>
+                  <span className={cn("text-[11px] font-bold px-2 py-0.5 rounded-full border", selectedExamState.isPublished ? "bg-green-50 text-green-600 border-green-200" : "bg-zinc-100 text-zinc-500 border-zinc-200")}>
+                    {selectedExamState.isPublished ? "출시됨" : "미출시"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => togglePublish(selectedExamState)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl text-xs font-bold border transition-colors",
+                      selectedExamState.isPublished
+                        ? "bg-zinc-100 text-zinc-600 border-zinc-200 hover:bg-zinc-200"
+                        : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                    )}
+                  >
+                    {selectedExamState.isPublished ? "숨기기" : "출시하기"}
+                  </button>
+                  <button
+                    onClick={() => router.push(`/teacher/exams/${selectedExamState.id}`)}
+                    className="px-4 py-2 rounded-xl bg-secondary text-xs font-bold text-foreground border hover:bg-accent transition-colors"
+                  >
+                    ✏️ 수정
+                  </button>
+                  <button
+                    onClick={() => handleDelete(selectedExamState)}
+                    disabled={deletingId === selectedExamState.id}
+                    className="px-4 py-2 rounded-xl bg-red-50 text-xs font-bold text-red-600 border border-red-100 hover:bg-red-100 disabled:opacity-50 transition-colors flex justify-center items-center"
+                  >
+                    {deletingId === selectedExamState.id ? <span className="w-3 h-3 border-2 border-t-red-600 border-red-200 rounded-full animate-spin" /> : "🗑️ 삭제"}
+                  </button>
+                </div>
               </div>
-              <div className={cn("text-xl sm:text-2xl font-black tracking-tight", k.isAccent ? "text-white" : "text-foreground")}>
-                {k.value}
+              
+              {/* Tabs UI */}
+              <div className="flex items-center border-b border-border mb-6">
+                {[
+                  { id: "SUMMARY", label: "📊 요약 통계" },
+                  { id: "QUESTIONS", label: "🎯 문항 분석" },
+                  { id: "STUDENTS", label: "👥 학생 성적" }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabType)}
+                    className={cn(
+                      "px-6 py-3.5 text-sm font-bold border-b-2 transition-all",
+                      activeTab === tab.id
+                        ? "border-primary text-primary"
+                        : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                    )}
+                    style={activeTab === tab.id ? { borderColor: subjectColor, color: subjectColor } : undefined}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
+            </>
+            );
+          })()}
+
+          {activeTab === "SUMMARY" && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+              {[
+                { label: "선택 시험", value: `${data.exam.title}`, icon: "📄" },
+                { label: "총 응시자", value: `${rows.length}명`, icon: "👥" },
+                { label: "평균 점수", value: `${data.avgScore}점`, isAccent: true, icon: "📊" },
+                { label: "최고 점수", value: `${rows[0]?.totalScore ?? 0}점`, icon: "🏆" },
+              ].map((k) => (
+                <div key={k.label} className={cn(
+                  "flex flex-col p-4 sm:p-5 rounded-3xl border shadow-sm transition-all duration-300",
+                  k.isAccent ? "border-transparent text-white shadow-md" : "bg-card border-border"
+                )} style={k.isAccent ? { background: `linear-gradient(135deg, ${subjectColor}ee, ${subjectColor})` } : undefined}>
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <span className={cn("text-xs sm:text-sm font-bold", k.isAccent ? "text-white/90" : "text-muted-foreground")}>{k.label}</span>
+                    <span className={cn("text-lg", k.isAccent ? "opacity-90" : "opacity-50")}>{k.icon}</span>
+                  </div>
+                  <div className={cn("text-xl sm:text-2xl font-black tracking-tight", k.isAccent ? "text-white" : "text-foreground")}>
+                    {k.value}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {/* Loading / Empty States */}
@@ -412,18 +523,18 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
       )}
 
       {/* 1. Question Stats Section */}
-      {data && !loading && data.questionStats?.length > 0 && (
-        <div className="mb-10">
+      {activeTab === "QUESTIONS" && data && !loading && data.questionStats?.length > 0 && (
+        <div className="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-4 px-1 gap-2">
             <div>
               <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight">문항별 상세분석</h2>
-              <p className="text-[11px] sm:text-xs font-bold text-muted-foreground mt-1.5 bg-secondary/50 inline-block px-2.5 py-1 rounded-lg">
-                🔴 50% 미만 (위험) &nbsp;|&nbsp; 🟡 50~79% (주의) &nbsp;|&nbsp; 🟢 80% 이상 (안전)
+              <p className="text-sm text-muted-foreground mt-1">
+                전체 문항의 오답률을 히트맵으로 한눈에 파악하세요.
               </p>
             </div>
           </div>
           <div className="bg-card rounded-3xl overflow-hidden shadow-sm border border-border p-4 sm:p-5">
-            <QuestionStatsSection
+            <QuestionHeatmapSection
               stats={data.questionStats}
               colorHex={subjectColor}
             />
@@ -432,8 +543,8 @@ export default function DashboardClient({ exams }: { exams: Exam[] }) {
       )}
 
       {/* 2. Results List Section */}
-      {data && !loading && rows.length > 0 && (
-        <div className="mb-8">
+      {activeTab === "STUDENTS" && data && !loading && rows.length > 0 && (
+        <div className="mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="flex items-end justify-between mb-4 px-1">
             <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight">학생별 성적표</h2>
           </div>
