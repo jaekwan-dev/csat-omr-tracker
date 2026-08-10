@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 
 interface Student {
   id: string;
@@ -193,23 +194,32 @@ export default function StudentManagementPage() {
   };
 
   return (
-    <div className="container" style={{ paddingTop: 24, paddingBottom: 80 }}>
+    <div className="mx-auto max-w-5xl px-4 pt-6 pb-24">
       {/* Mobile-Friendly Header */}
-      <div style={styles.headerBlock}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <h1 style={styles.title}>학생 관리</h1>
-            <span style={styles.countBadge}>{students.length}명</span>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">학생 관리</h1>
+            <span className="bg-teal-100 text-teal-800 text-xs font-bold px-2.5 py-1 rounded-full">
+              {students.length}명
+            </span>
           </div>
+          <p className="text-sm text-muted-foreground">학생 정보와 비밀번호(PIN)를 관리하세요.</p>
         </div>
 
         {/* Top Action Buttons (Responsive Grid) */}
-        <div style={styles.actionGroup}>
-          <button onClick={openAddModal} className="btn btn-primary" style={styles.addBtn}>
+        <div className="grid grid-cols-2 md:flex gap-2.5 w-full md:w-auto">
+          <button
+            onClick={openAddModal}
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-sm hover:opacity-90 transition-all"
+          >
             <span>➕</span>
             <span>새 학생 등록</span>
           </button>
-          <button onClick={() => setIsCsvModalOpen(true)} className="btn btn-ghost" style={styles.csvBtn}>
+          <button
+            onClick={() => setIsCsvModalOpen(true)}
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-background border border-border text-foreground text-sm font-bold shadow-sm hover:bg-accent transition-all"
+          >
             <span>📄</span>
             <span>CSV 일괄 등록</span>
           </button>
@@ -217,83 +227,87 @@ export default function StudentManagementPage() {
       </div>
 
       {/* Mobile-Friendly Search Bar */}
-      <div style={styles.searchWrap}>
-        <div style={styles.searchBox}>
-          <span style={{ fontSize: 18, color: "#64748b" }}>🔍</span>
+      <div className="mb-6 flex flex-col gap-2">
+        <div className="flex items-center gap-2.5 bg-background rounded-2xl px-4 py-3 border border-border shadow-sm">
+          <span className="text-lg text-muted-foreground">🔍</span>
           <input
             type="text"
             placeholder="이름, 학번, 학년, 반으로 검색"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={styles.searchInput}
+            className="flex-1 border-none bg-transparent outline-none text-sm font-medium text-foreground placeholder:text-muted-foreground"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} style={styles.clearSearchBtn} aria-label="검색어 초기화">
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full hover:text-foreground transition-colors"
+              aria-label="검색어 초기화"
+            >
               ✕
             </button>
           )}
         </div>
         {searchQuery && (
-          <div style={styles.searchCountText}>
-            검색 결과 <strong>{filteredStudents.length}</strong>명
+          <div className="text-xs text-muted-foreground px-1">
+            검색 결과 <strong className="text-foreground">{filteredStudents.length}</strong>명
           </div>
         )}
       </div>
 
       {/* Content Area */}
       {loading ? (
-        <div style={{ padding: "60px 0", textAlign: "center" }}>
-          <div className="spinner" style={{ width: 36, height: 36, borderTopColor: "#0f766e", borderColor: "#99f6e4", margin: "0 auto" }} />
-          <div style={{ fontSize: 14, color: "#64748b", marginTop: 12 }}>학생 목록을 불러오는 중...</div>
+        <div className="py-16 text-center">
+          <div className="spinner mx-auto mb-3" />
+          <div className="text-sm text-muted-foreground">학생 목록을 불러오는 중...</div>
         </div>
       ) : filteredStudents.length === 0 ? (
-        <div style={styles.emptyState}>
-          <div style={{ fontSize: 44, marginBottom: 12 }}>👤</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>등록된 학생이 없습니다</div>
-          <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
+        <div className="bg-card rounded-3xl p-12 text-center border border-border shadow-sm flex flex-col items-center gap-2">
+          <div className="text-4xl mb-2">👤</div>
+          <div className="text-base font-bold text-foreground">등록된 학생이 없습니다</div>
+          <div className="text-sm text-muted-foreground mt-1">
             {searchQuery ? "검색 조건에 해당되는 학생이 없습니다." : "새 학생 등록 버튼을 눌러 추가하세요."}
           </div>
         </div>
       ) : (
         <>
           {/* MOBILE VIEW (< 768px): Card Grid Layout */}
-          <div className="mobile-student-cards" style={styles.mobileCardGrid}>
+          <div className="md:hidden flex flex-col gap-3">
             {filteredStudents.map((student) => {
               const isPinVisible = !!showPinIdMap[student.id];
               return (
-                <div key={student.id} style={styles.studentCard}>
+                <div key={student.id} className="bg-card rounded-2xl p-4 border border-border shadow-sm flex flex-col gap-3">
                   {/* Card Header Row */}
-                  <div style={styles.cardHeaderRow}>
-                    <div style={styles.cardAvatar}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-primary text-primary-foreground text-lg font-black flex items-center justify-center shrink-0 shadow-sm">
                       {student.name.charAt(0)}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={styles.cardStudentName}>{student.name}</span>
-                        <span style={styles.classBadge}>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base font-bold text-foreground">{student.name}</span>
+                        <span className="bg-teal-50 text-teal-700 border border-teal-200 text-[11px] font-bold px-1.5 py-0.5 rounded-md">
                           {student.grade}학년 {student.classNum}반
                         </span>
                       </div>
-                      <div style={styles.cardStudentId}>
+                      <div className="text-xs text-muted-foreground font-semibold mt-0.5">
                         학번: {student.id}
                       </div>
                     </div>
                     {/* Submission Count Chip */}
-                    <div style={styles.submissionChip}>
+                    <div className="text-[11px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-1 rounded-full shrink-0">
                       제출 {student._count.submissions}건
                     </div>
                   </div>
 
                   {/* Card Content Row (PIN & Info) */}
-                  <div style={styles.cardBodyRow}>
-                    <div style={styles.pinBox}>
-                      <span style={{ fontSize: 12, color: "#64748b", fontWeight: 700 }}>PIN</span>
-                      <span style={{ fontFamily: "monospace", fontSize: 15, fontWeight: 800, color: "#0f766e", letterSpacing: 2 }}>
+                  <div className="flex items-center justify-between bg-secondary/50 rounded-xl px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground font-bold">PIN</span>
+                      <span className="font-mono text-sm font-black text-primary tracking-widest">
                         {isPinVisible ? student.pinCode : "••••"}
                       </span>
                       <button
                         onClick={() => toggleShowPin(student.id)}
-                        style={styles.pinToggleBtn}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors p-1"
                         title={isPinVisible ? "숨기기" : "보기"}
                       >
                         {isPinVisible ? "👁️‍🗨️" : "👁️"}
@@ -302,11 +316,17 @@ export default function StudentManagementPage() {
                   </div>
 
                   {/* Card Action Footer */}
-                  <div style={styles.cardFooter}>
-                    <button onClick={() => openEditModal(student)} style={styles.cardEditBtn}>
+                  <div className="flex gap-2 w-full mt-1">
+                    <button
+                      onClick={() => openEditModal(student)}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-secondary text-sm font-bold text-foreground border border-border hover:bg-accent transition-colors"
+                    >
                       ✏️ 수정
                     </button>
-                    <button onClick={() => handleDelete(student)} style={styles.cardDeleteBtn}>
+                    <button
+                      onClick={() => handleDelete(student)}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-red-50 text-sm font-bold text-red-600 border border-red-100 hover:bg-red-100 transition-colors"
+                    >
                       🗑️ 삭제
                     </button>
                   </div>
@@ -316,40 +336,50 @@ export default function StudentManagementPage() {
           </div>
 
           {/* DESKTOP VIEW (>= 768px): Table Layout */}
-          <div className="desktop-student-table" style={styles.tableCard}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="hidden md:block bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+            <table className="w-full border-collapse">
               <thead>
-                <tr style={{ background: "#f0fdfa", borderBottom: "1px solid #ccfbf1" }}>
-                  <th style={styles.th}>학번</th>
-                  <th style={styles.th}>이름</th>
-                  <th style={styles.th}>학년 / 반</th>
-                  <th style={styles.th}>PIN 번호</th>
-                  <th style={styles.th}>제출 기록</th>
-                  <th style={{ ...styles.th, textAlign: "right" }}>관리</th>
+                <tr className="bg-secondary border-b border-border">
+                  <th className="px-4 py-3.5 text-xs font-bold text-muted-foreground text-left">학번</th>
+                  <th className="px-4 py-3.5 text-xs font-bold text-muted-foreground text-left">이름</th>
+                  <th className="px-4 py-3.5 text-xs font-bold text-muted-foreground text-left">학년 / 반</th>
+                  <th className="px-4 py-3.5 text-xs font-bold text-muted-foreground text-left">PIN 번호</th>
+                  <th className="px-4 py-3.5 text-xs font-bold text-muted-foreground text-left">제출 기록</th>
+                  <th className="px-4 py-3.5 text-xs font-bold text-muted-foreground text-right">관리</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.map((s) => (
-                  <tr key={s.id} style={styles.tableRow}>
-                    <td style={{ ...styles.td, fontWeight: 800, color: "#0f766e" }}>{s.id}</td>
-                    <td style={{ ...styles.td, fontWeight: 800, color: "#0f172a" }}>{s.name}</td>
-                    <td style={styles.td}>
-                      <span style={styles.classBadge}>{s.grade}학년 {s.classNum}반</span>
+                  <tr key={s.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3.5 text-sm font-bold text-primary">{s.id}</td>
+                    <td className="px-4 py-3.5 text-sm font-bold text-foreground">{s.name}</td>
+                    <td className="px-4 py-3.5">
+                      <span className="bg-teal-50 text-teal-700 border border-teal-200 text-[11px] font-bold px-2 py-1 rounded-md">
+                        {s.grade}학년 {s.classNum}반
+                      </span>
                     </td>
-                    <td style={styles.td}>
-                      <span style={styles.desktopPinCode}>{s.pinCode}</span>
+                    <td className="px-4 py-3.5">
+                      <span className="font-mono text-sm tracking-widest bg-secondary text-foreground px-2.5 py-1 rounded-lg font-bold border border-border">
+                        {s.pinCode}
+                      </span>
                     </td>
-                    <td style={styles.td}>
-                      <span style={{ fontWeight: 700, color: s._count.submissions > 0 ? "#0f766e" : "#94a3b8" }}>
+                    <td className="px-4 py-3.5">
+                      <span className={cn("text-sm font-bold", s._count.submissions > 0 ? "text-primary" : "text-muted-foreground")}>
                         {s._count.submissions}회 제출
                       </span>
                     </td>
-                    <td style={{ ...styles.td, textAlign: "right" }}>
-                      <div style={{ display: "inline-flex", gap: 8 }}>
-                        <button onClick={() => openEditModal(s)} className="btn btn-ghost btn-sm" style={styles.dtEditBtn}>
+                    <td className="px-4 py-3.5 text-right">
+                      <div className="inline-flex gap-2">
+                        <button
+                          onClick={() => openEditModal(s)}
+                          className="px-3 py-1.5 rounded-lg bg-secondary text-xs font-bold text-foreground border border-border hover:bg-accent transition-colors"
+                        >
                           ✏️ 수정
                         </button>
-                        <button onClick={() => handleDelete(s)} className="btn btn-sm" style={styles.dtDeleteBtn}>
+                        <button
+                          onClick={() => handleDelete(s)}
+                          className="px-3 py-1.5 rounded-lg bg-red-50 text-xs font-bold text-red-600 border border-red-100 hover:bg-red-100 transition-colors"
+                        >
                           🗑️ 삭제
                         </button>
                       </div>
@@ -364,96 +394,108 @@ export default function StudentManagementPage() {
 
       {/* Responsive Modal (Student Add/Edit) */}
       {isModalOpen && (
-        <div style={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
-          <div style={styles.responsiveModal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={{ fontSize: 20, fontWeight: 900, color: "#0f172a" }}>
+        <div
+          className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="bg-card rounded-3xl p-6 sm:p-7 w-full max-w-sm shadow-xl border border-border animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-foreground">
                 {modalMode === "ADD" ? "➕ 새 학생 추가" : "✏️ 학생 정보 수정"}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} style={styles.modalCloseBtn}>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground text-lg px-2"
+              >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={styles.fieldBlock}>
-                <label className="label">학번 (4자리)</label>
+            <form onSubmit={handleSave} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-foreground ml-1">학번 (4자리)</label>
                 <input
                   type="text"
-                  className="input"
                   placeholder="예: 1101"
                   value={formId}
                   onChange={(e) => setFormId(e.target.value.replace(/\D/g, ""))}
                   disabled={modalMode === "EDIT"}
                   maxLength={4}
                   autoFocus
+                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:opacity-50"
                 />
               </div>
 
-              <div style={styles.formRowGrid}>
-                <div style={styles.fieldBlock}>
-                  <label className="label">이름</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground ml-1">이름</label>
                   <input
                     type="text"
-                    className="input"
                     placeholder="홍길동"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
                   />
                 </div>
-                <div style={styles.fieldBlock}>
-                  <label className="label">PIN 번호 (4자리)</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground ml-1">PIN (4자리)</label>
                   <input
                     type="text"
-                    className="input"
                     maxLength={4}
                     placeholder="1234"
                     value={formPin}
                     onChange={(e) => setFormPin(e.target.value.replace(/\D/g, ""))}
+                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 font-mono tracking-widest"
                   />
                 </div>
               </div>
 
-              <div style={styles.formRowGrid}>
-                <div style={styles.fieldBlock}>
-                  <label className="label">학년</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground ml-1">학년</label>
                   <input
                     type="number"
                     min={1}
                     max={3}
-                    className="input"
                     value={formGrade}
                     onChange={(e) => setFormGrade(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
                   />
                 </div>
-                <div style={styles.fieldBlock}>
-                  <label className="label">반</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground ml-1">반</label>
                   <input
                     type="number"
                     min={1}
                     max={20}
-                    className="input"
                     value={formClass}
                     onChange={(e) => setFormClass(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
                   />
                 </div>
               </div>
 
               {errorMsg && (
-                <div className="alert alert-error">
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2">
                   <span>⚠️</span> {errorMsg}
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-ghost" style={{ flex: 1 }}>
+              <div className="flex gap-2.5 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 px-4 py-3 rounded-xl bg-secondary text-sm font-bold text-foreground border border-border hover:bg-accent transition-colors"
+                >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn btn-primary"
-                  style={{ flex: 2, background: "linear-gradient(135deg, #0f766e, #0891b2)", boxShadow: "0 4px 14px rgba(8,145,178,0.3)" }}
+                  className="flex-[2] px-4 py-3 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:translate-y-0"
                 >
                   {submitting ? "저장 중..." : "💾 저장하기"}
                 </button>
@@ -465,51 +507,67 @@ export default function StudentManagementPage() {
 
       {/* CSV Bulk Upload Modal */}
       {isCsvModalOpen && (
-        <div style={styles.modalOverlay} onClick={() => setIsCsvModalOpen(false)}>
-          <div style={styles.responsiveModal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={{ fontSize: 20, fontWeight: 900, color: "#0f172a" }}>📄 CSV 대량 등록</h2>
-              <button onClick={() => setIsCsvModalOpen(false)} style={styles.modalCloseBtn}>
+        <div
+          className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setIsCsvModalOpen(false)}
+        >
+          <div
+            className="bg-card rounded-3xl p-6 sm:p-7 w-full max-w-sm shadow-xl border border-border animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-foreground">📄 CSV 대량 등록</h2>
+              <button
+                onClick={() => setIsCsvModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground text-lg px-2"
+              >
                 ✕
               </button>
             </div>
 
-            <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16, lineHeight: 1.5 }}>
+            <p className="text-[13px] text-muted-foreground mb-5 leading-relaxed font-medium">
               엑셀/CSV 양식을 업로드하여 수십 명의 학생을 한 번에 등록합니다.
-              <br />최초 PIN 번호는 자동으로 0000으로 설정됩니다.
+              <br />최초 PIN 번호는 자동으로 <strong className="text-foreground">0000</strong>으로 설정됩니다.
             </p>
 
-            <form onSubmit={handleCsvUpload} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={styles.fileDropZone}>
+            <form onSubmit={handleCsvUpload} className="flex flex-col gap-4">
+              <div className="p-5 bg-secondary/30 rounded-2xl border-2 border-dashed border-border text-center">
                 <input
                   type="file"
                   accept=".csv"
                   onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                  style={{ width: "100%", fontSize: 14 }}
+                  className="w-full text-sm text-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-secondary file:text-secondary-foreground file:font-bold cursor-pointer"
                 />
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <button type="button" onClick={downloadCsvTemplate} style={styles.templateLinkBtn}>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={downloadCsvTemplate}
+                  className="text-[13px] font-bold text-primary hover:underline"
+                >
                   ⬇️ 표준 CSV 양식 다운로드
                 </button>
               </div>
 
               {csvError && (
-                <div className="alert alert-error">
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2">
                   <span>⚠️</span> {csvError}
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-                <button type="button" onClick={() => setIsCsvModalOpen(false)} className="btn btn-ghost" style={{ flex: 1 }}>
+              <div className="flex gap-2.5 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCsvModalOpen(false)}
+                  className="flex-1 px-4 py-3 rounded-xl bg-secondary text-sm font-bold text-foreground border border-border hover:bg-accent transition-colors"
+                >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={csvUploading || !csvFile}
-                  className="btn btn-primary"
-                  style={{ flex: 2, background: "linear-gradient(135deg, #0f766e, #0891b2)" }}
+                  className="flex-[2] px-4 py-3 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:translate-y-0"
                 >
                   {csvUploading ? "업로드 중..." : "🚀 일괄 업로드"}
                 </button>
@@ -521,309 +579,3 @@ export default function StudentManagementPage() {
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  headerBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 900,
-    color: "#0f172a",
-    letterSpacing: "-0.02em",
-  },
-  subtitle: {
-    fontSize: 13,
-    color: "#64748b",
-  },
-  countBadge: {
-    background: "#ccfbf1",
-    color: "#0f766e",
-    fontSize: 12,
-    fontWeight: 800,
-    padding: "3px 10px",
-    borderRadius: 999,
-  },
-  actionGroup: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-    gap: 10,
-    width: "100%",
-  },
-  addBtn: {
-    background: "linear-gradient(135deg, #0f766e, #0891b2)",
-    color: "#fff",
-    boxShadow: "0 4px 14px rgba(8,145,178,0.3)",
-    padding: "12px 16px",
-    borderRadius: 14,
-    fontSize: 14,
-  },
-  csvBtn: {
-    background: "#fff",
-    border: "1px solid #cbd5e1",
-    color: "#334155",
-    padding: "12px 16px",
-    borderRadius: 14,
-    fontSize: 14,
-  },
-  searchWrap: {
-    marginBottom: 20,
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  searchBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    background: "#fff",
-    borderRadius: 16,
-    padding: "12px 16px",
-    border: "1.5px solid #cbd5e1",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-  },
-  searchInput: {
-    flex: 1,
-    border: "none",
-    background: "transparent",
-    fontSize: 15,
-    outline: "none",
-    color: "#0f172a",
-  },
-  clearSearchBtn: {
-    fontSize: 14,
-    color: "#94a3b8",
-    padding: "2px 6px",
-    borderRadius: 999,
-    background: "#f1f5f9",
-  },
-  searchCountText: {
-    fontSize: 12,
-    color: "#64748b",
-    paddingLeft: 4,
-  },
-  emptyState: {
-    background: "#fff",
-    borderRadius: 24,
-    padding: "60px 20px",
-    textAlign: "center",
-    border: "1px solid #e2e8f0",
-  },
-
-  /* Mobile Card Layout */
-  mobileCardGrid: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-  studentCard: {
-    background: "#fff",
-    borderRadius: 20,
-    padding: "16px 18px",
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-  cardHeaderRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  },
-  cardAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    background: "linear-gradient(135deg, #0f766e, #0891b2)",
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: 900,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    boxShadow: "0 4px 10px rgba(8,145,178,0.2)",
-  },
-  cardStudentName: {
-    fontSize: 16,
-    fontWeight: 900,
-    color: "#0f172a",
-  },
-  classBadge: {
-    background: "#ccfbf1",
-    color: "#0f766e",
-    fontSize: 11,
-    fontWeight: 800,
-    padding: "3px 8px",
-    borderRadius: 6,
-  },
-  cardStudentId: {
-    fontSize: 12,
-    color: "#64748b",
-    fontWeight: 600,
-    marginTop: 2,
-  },
-  submissionChip: {
-    marginLeft: "auto",
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#0f766e",
-    background: "#f0fdfa",
-    border: "1px solid #99f6e4",
-    padding: "4px 10px",
-    borderRadius: 999,
-  },
-  cardBodyRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    background: "#f8fafc",
-    borderRadius: 12,
-    padding: "10px 14px",
-  },
-  pinBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  },
-  pinToggleBtn: {
-    background: "none",
-    border: "none",
-    fontSize: 14,
-    cursor: "pointer",
-    padding: 2,
-  },
-  cardFooter: {
-    display: "flex",
-    gap: 8,
-  },
-  cardEditBtn: {
-    flex: 1,
-    padding: "10px",
-    borderRadius: 12,
-    background: "#f1f5f9",
-    color: "#334155",
-    fontWeight: 700,
-    fontSize: 13,
-    textAlign: "center",
-  },
-  cardDeleteBtn: {
-    flex: 1,
-    padding: "10px",
-    borderRadius: 12,
-    background: "#fef2f2",
-    color: "#dc2626",
-    fontWeight: 700,
-    fontSize: 13,
-    textAlign: "center",
-    border: "1px solid #fecaca",
-  },
-
-  /* Desktop Table Layout */
-  tableCard: {
-    background: "#fff",
-    borderRadius: 20,
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
-    overflow: "hidden",
-  },
-  th: {
-    padding: "14px 18px",
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#0f766e",
-    textAlign: "left",
-  },
-  td: {
-    padding: "14px 18px",
-    fontSize: 14,
-    verticalAlign: "middle",
-  },
-  tableRow: {
-    borderBottom: "1px solid #f1f5f9",
-  },
-  desktopPinCode: {
-    fontFamily: "monospace",
-    letterSpacing: 2,
-    background: "#f1f5f9",
-    padding: "4px 10px",
-    borderRadius: 8,
-    fontWeight: 800,
-    color: "#475569",
-    fontSize: 13,
-  },
-  dtEditBtn: {
-    padding: "6px 12px",
-    fontSize: 13,
-  },
-  dtDeleteBtn: {
-    padding: "6px 12px",
-    fontSize: 13,
-    background: "#fef2f2",
-    color: "#dc2626",
-    border: "1px solid #fecaca",
-  },
-
-  /* Modal */
-  modalOverlay: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 100,
-    background: "rgba(15,23,42,0.6)",
-    backdropFilter: "blur(4px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  responsiveModal: {
-    background: "#fff",
-    borderRadius: 28,
-    padding: "28px 24px",
-    width: "100%",
-    maxWidth: 440,
-    boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-    animation: "scaleIn 0.2s ease",
-  },
-  modalHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  modalCloseBtn: {
-    fontSize: 18,
-    color: "#94a3b8",
-    padding: "4px 8px",
-    borderRadius: 999,
-  },
-  formRowGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-  },
-  fieldBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-  },
-  fileDropZone: {
-    padding: 20,
-    background: "#f8fafc",
-    borderRadius: 16,
-    border: "2px dashed #cbd5e1",
-  },
-  templateLinkBtn: {
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#0f766e",
-    textDecoration: "underline",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-  },
-};

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LogOut, Loader2 } from "lucide-react";
 
 export default function TeacherLogoutButton() {
   const [loading, setLoading] = useState(false);
@@ -12,7 +13,6 @@ export default function TeacherLogoutButton() {
     } catch (e) {
       console.error(e);
     }
-    // 하드 리다이렉트로 세션 및 캐시 초기화
     window.location.href = "/teacher/login";
   }
 
@@ -20,14 +20,14 @@ export default function TeacherLogoutButton() {
     <button
       onClick={handleLogout}
       disabled={loading}
-      className="btn btn-ghost btn-sm"
-      style={{ borderColor: "#99f6e4", color: "#0f766e" }}
+      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 hover:text-teal-800 transition-colors disabled:opacity-50"
     >
       {loading ? (
-        <span className="spinner" style={{ width: 14, height: 14, borderTopColor: "#0f766e", borderColor: "#99f6e4" }} />
+        <Loader2 className="w-4 h-4 animate-spin" />
       ) : (
-        "로그아웃"
+        <LogOut className="w-4 h-4" />
       )}
+      로그아웃
     </button>
   );
 }

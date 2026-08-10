@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 /* ── Subject configuration ───────────────────────────────────────────── */
 
@@ -45,11 +46,15 @@ const SUBJECT_CONFIG: Record<string, SubjectConfig> = {
   },
 };
 
-const SUBJECT_COLOR: Record<string, string> = { KOREAN: "#764ba2", MATH: "#f97316", ENGLISH: "#3b82f6" };
-const SUBJECT_GRADIENT: Record<string, string> = {
-  KOREAN: "linear-gradient(135deg,#667eea,#764ba2)",
-  MATH: "linear-gradient(135deg,#f97316,#7c3aed)",
-  ENGLISH: "linear-gradient(135deg,#06b6d4,#3b82f6)",
+const SUBJECT_COLOR: Record<string, string> = {
+  KOREAN: "bg-purple-600",
+  MATH: "bg-orange-500",
+  ENGLISH: "bg-blue-500",
+};
+const SUBJECT_COLOR_HEX: Record<string, string> = {
+  KOREAN: "#7c3aed",
+  MATH: "#f97316",
+  ENGLISH: "#3b82f6",
 };
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -89,8 +94,6 @@ export default function NewExamPage() {
     setQuestions(buildQuestions(subject));
   }, [subject]);
 
-  /* ── Question helpers ─────────────────────────────────────────────── */
-
   function setAnswer(idx: number, answer: number) {
     setQuestions((prev) => {
       const n = [...prev];
@@ -110,21 +113,6 @@ export default function NewExamPage() {
   function fillAllScores(score: number) {
     setQuestions((prev) => prev.map((q) => ({ ...q, score })));
   }
-
-  function toggleSubjective(idx: number) {
-    setQuestions((prev) => {
-      const n = [...prev];
-      const isSubj = !n[idx].isSubjective;
-      n[idx] = {
-        ...n[idx],
-        isSubjective: isSubj,
-        correctAnswer: isSubj ? 0 : 1,
-      };
-      return n;
-    });
-  }
-
-  /* ── 국어: 문항 삭제 / 복원 ─────────────────────────────────────── */
 
   function removeQuestion(idx: number) {
     setQuestions((prev) => {
@@ -148,19 +136,9 @@ export default function NewExamPage() {
     });
   }
 
-  /* ── Computed values ──────────────────────────────────────────────── */
-
   const maxScore = useMemo(() => questions.reduce((s, q) => s + q.score, 0), [questions]);
-  const color = SUBJECT_COLOR[subject];
-  const gradient = SUBJECT_GRADIENT[subject];
-
-  const totalScoreLabel = cfg.fixedTotal
-    ? `${cfg.fixedTotal}점 만점`
-    : null;
-
+  const colorHex = SUBJECT_COLOR_HEX[subject];
   const totalMismatch = cfg.fixedTotal !== null && maxScore !== cfg.fixedTotal;
-
-  /* ── Submit ───────────────────────────────────────────────────────── */
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -183,8 +161,6 @@ export default function NewExamPage() {
 
     try {
       if (explanationFile) {
-        const formData = new FormData();
-        formData.append("file", explanationFile);
         const uploadRes = await fetch(`/api/upload?filename=${encodeURIComponent(explanationFile.name)}`, {
           method: "POST",
           body: explanationFile,
@@ -214,143 +190,97 @@ export default function NewExamPage() {
     }
   }
 
-  /* ── Score pill button renderer ───────────────────────────────────── */
-
-  function renderScorePills(questionIdx: number, currentScore: number) {
-    return (
-      <div style={{ display: "flex", gap: 3 }}>
-        {cfg.scoreOptions.map((s) => {
-          const isSelected = currentScore === s;
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setScore(questionIdx, s)}
-              style={{
-                minWidth: 32, height: 28,
-                padding: "0 6px",
-                borderRadius: 8,
-                border: isSelected ? "none" : "1.5px solid #e2e8f0",
-                background: isSelected ? color : "#fff",
-                color: isSelected ? "#fff" : "#64748b",
-                fontWeight: 700, fontSize: 12,
-                cursor: "pointer",
-                transition: "all 0.12s",
-                boxShadow: isSelected ? `0 2px 6px ${color}44` : "none",
-                fontFamily: "inherit",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {s}
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  /* ── Render ────────────────────────────────────────────────────────── */
-
   return (
-    <div className="container" style={{ paddingTop: 24, paddingBottom: 80, maxWidth: 720, paddingLeft: 16, paddingRight: 16 }}>
-      <div style={styles.pageHeader}>
-        <button onClick={() => router.push("/teacher/exams")} className="btn btn-ghost btn-sm">← 돌아가기</button>
-      </div>
+    <div className="mx-auto max-w-2xl px-4 pt-6 pb-24">
+      {/* Back button */}
+      <button
+        onClick={() => router.push("/teacher/exams")}
+        className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        ← 돌아가기
+      </button>
 
-      <h1 style={styles.pageTitle}>새 시험 등록</h1>
-      <p style={styles.pageSubtitle}>시험 정보와 각 문항의 정답 및 배점을 입력하세요.</p>
+      <h1 className="text-2xl font-bold tracking-tight mb-1">새 시험 등록</h1>
+      <p className="text-sm text-muted-foreground mb-8">시험 정보와 각 문항의 정답 및 배점을 입력하세요.</p>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        {/* Basic Info */}
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>기본 정보</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Subject Selector */}
-            <div>
-              <label className="label">과목 선택</label>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {Object.entries(SUBJECT_CONFIG).map(([s, c]) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSubject(s)}
-                    style={{
-                      ...styles.subjectBtn,
-                      background: subject === s ? SUBJECT_GRADIENT[s] : "#f8faff",
-                      color: subject === s ? "#fff" : "#475569",
-                      border: subject === s ? "none" : "1.5px solid #e2e8f0",
-                      boxShadow: subject === s ? `0 4px 14px ${SUBJECT_COLOR[s]}44` : "none",
-                    }}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+
+        {/* ─── Basic Info Card ─── */}
+        <div className="bg-card rounded-2xl shadow-sm p-6 space-y-5">
+          <h2 className="text-base font-semibold">기본 정보</h2>
+
+          {/* Subject Selector */}
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-2 block">과목 선택</label>
+            <div className="flex gap-2">
+              {Object.entries(SUBJECT_CONFIG).map(([s, c]) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSubject(s)}
+                  className={cn(
+                    "px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
+                    subject === s
+                      ? "text-white shadow-md scale-[1.02]"
+                      : "bg-secondary text-secondary-foreground hover:bg-accent"
+                  )}
+                  style={subject === s ? { background: SUBJECT_COLOR_HEX[s] } : undefined}
+                >
+                  {c.label}
+                </button>
+              ))}
             </div>
+          </div>
 
-            {/* Subject Info Banner */}
-            <div style={{
-              background: `${color}0a`,
-              border: `1.5px solid ${color}22`,
-              borderRadius: 12,
-              padding: "12px 16px",
-              fontSize: 13,
-              color: "#475569",
-              lineHeight: 1.7,
-            }}>
-              <div>📋 <strong>{cfg.label}</strong> 설정</div>
-              <div>• 문항 수: {cfg.canDeleteQuestions ? `${cfg.minQuestions}~${cfg.totalQuestions}문항 (삭제 가능)` : `${cfg.totalQuestions}문항 (고정)`}</div>
-              <div>• 배점: {cfg.scoreOptions.join(", ")}점</div>
-              {cfg.fixedTotal && <div>• 만점: {cfg.fixedTotal}점</div>}
-            </div>
+          {/* Subject info */}
+          <div className="rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground space-y-0.5">
+            <div className="font-medium text-foreground">📋 {cfg.label} 설정</div>
+            <div>• 문항 수: {cfg.canDeleteQuestions ? `${cfg.minQuestions}~${cfg.totalQuestions}문항 (삭제 가능)` : `${cfg.totalQuestions}문항 (고정)`}</div>
+            <div>• 배점: {cfg.scoreOptions.join(", ")}점</div>
+            {cfg.fixedTotal && <div>• 만점: {cfg.fixedTotal}점</div>}
+          </div>
 
-            {/* Title */}
-            <div>
-              <label className="label" htmlFor="examTitle">시험 제목</label>
-              <input
-                id="examTitle"
-                className="input"
-                type="text"
-                placeholder="예: 2024년 6월 기출"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                autoFocus
-              />
-              <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 6 }}>
-                회차, 날짜, 기출명 등을 자유롭게 입력하세요.
-              </p>
-            </div>
+          {/* Title */}
+          <div>
+            <label htmlFor="examTitle" className="text-xs font-medium text-muted-foreground mb-2 block">시험 제목</label>
+            <input
+              id="examTitle"
+              type="text"
+              placeholder="예: 2024년 6월 기출"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              autoFocus
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/20 transition-all"
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">회차, 날짜, 기출명 등을 자유롭게 입력하세요.</p>
+          </div>
 
-            {/* Explanation PDF */}
-            <div>
-              <label className="label" htmlFor="explanationFile">해설지 PDF 업로드 (선택)</label>
-              <input
-                id="explanationFile"
-                className="input"
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => setExplanationFile(e.target.files?.[0] || null)}
-              />
-              <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 6 }}>
-                학생들이 시험 제출 후 다운로드할 수 있는 해설지(PDF)를 업로드합니다.
-              </p>
-            </div>
+          {/* PDF upload */}
+          <div>
+            <label htmlFor="explanationFile" className="text-xs font-medium text-muted-foreground mb-2 block">해설지 PDF 업로드 (선택)</label>
+            <input
+              id="explanationFile"
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setExplanationFile(e.target.files?.[0] || null)}
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs file:font-medium file:text-secondary-foreground cursor-pointer"
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">학생들이 시험 제출 후 다운로드할 수 있는 해설지(PDF)를 업로드합니다.</p>
           </div>
         </div>
 
-        {/* Questions */}
-        <div style={styles.card}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
-            <h2 style={{ ...styles.cardTitle, marginBottom: 0 }}>문항별 정답 및 배점</h2>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontSize: 13, color: "#64748b" }}>전체 배점:</span>
+        {/* ─── Questions Card ─── */}
+        <div className="bg-card rounded-2xl shadow-sm p-6 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <h2 className="text-base font-semibold">문항별 정답 및 배점</h2>
+            <div className="flex gap-1.5 items-center flex-wrap">
+              <span className="text-xs text-muted-foreground">전체 배점:</span>
               {cfg.scoreOptions.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => fillAllScores(s)}
-                  className="btn btn-ghost btn-sm"
-                  style={{ fontSize: 12, color }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
                   전체 {s}점
                 </button>
@@ -359,56 +289,46 @@ export default function NewExamPage() {
           </div>
 
           {/* Score summary bar */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "10px 14px", marginBottom: 14,
-            background: totalMismatch ? "#fef2f2" : `${color}08`,
-            border: `1.5px solid ${totalMismatch ? "#fecaca" : `${color}18`}`,
-            borderRadius: 10,
-          }}>
-            <span style={{
-              fontSize: 14, fontWeight: 800,
-              color: totalMismatch ? "#dc2626" : color,
-            }}>
+          <div className={cn(
+            "flex items-center justify-between rounded-xl px-4 py-3",
+            totalMismatch
+              ? "bg-red-50 border border-red-200"
+              : "bg-muted/50"
+          )}>
+            <span className={cn(
+              "text-sm font-bold",
+              totalMismatch ? "text-red-600" : "text-foreground"
+            )}>
               합계 {maxScore}점
             </span>
-            {totalScoreLabel && (
-              <span style={{
-                fontSize: 13, fontWeight: 600,
-                color: totalMismatch ? "#dc2626" : "#64748b",
-              }}>
+            {cfg.fixedTotal && (
+              <span className={cn(
+                "text-xs font-medium",
+                totalMismatch ? "text-red-500" : "text-muted-foreground"
+              )}>
                 {totalMismatch
-                  ? `${maxScore > cfg.fixedTotal! ? `${maxScore - cfg.fixedTotal!}점 초과` : `${cfg.fixedTotal! - maxScore}점 부족`} (목표 ${cfg.fixedTotal}점)`
-                  : `✓ ${totalScoreLabel}`
+                  ? `${maxScore > cfg.fixedTotal ? `${maxScore - cfg.fixedTotal}점 초과` : `${cfg.fixedTotal - maxScore}점 부족`} (목표 ${cfg.fixedTotal}점)`
+                  : `✓ ${cfg.fixedTotal}점 만점`
                 }
               </span>
             )}
           </div>
 
-          {/* 국어: 문항 추가/삭제 컨트롤 */}
+          {/* 국어: question count control */}
           {cfg.canDeleteQuestions && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
-              marginBottom: 14, padding: "10px 14px",
-              background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0",
-            }}>
-              <span style={{ fontSize: 13, color: "#475569", fontWeight: 600 }}>
+            <div className="flex items-center gap-3 flex-wrap rounded-xl bg-muted/30 px-4 py-3">
+              <span className="text-sm font-semibold text-foreground">
                 현재 {questions.length}문항
               </span>
-              <span style={{ fontSize: 12, color: "#94a3b8" }}>
+              <span className="text-xs text-muted-foreground">
                 (최소 {cfg.minQuestions} ~ 최대 {cfg.totalQuestions})
               </span>
-              <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+              <div className="ml-auto flex gap-2">
                 <button
                   type="button"
                   onClick={addQuestion}
                   disabled={questions.length >= cfg.totalQuestions}
-                  style={{
-                    ...styles.countBtn,
-                    background: questions.length >= cfg.totalQuestions ? "#e2e8f0" : `${color}15`,
-                    color: questions.length >= cfg.totalQuestions ? "#94a3b8" : color,
-                    cursor: questions.length >= cfg.totalQuestions ? "not-allowed" : "pointer",
-                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-secondary text-secondary-foreground hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   + 추가
                 </button>
@@ -416,12 +336,7 @@ export default function NewExamPage() {
                   type="button"
                   onClick={() => removeQuestion(questions.length - 1)}
                   disabled={questions.length <= cfg.minQuestions}
-                  style={{
-                    ...styles.countBtn,
-                    background: questions.length <= cfg.minQuestions ? "#e2e8f0" : "#fef2f2",
-                    color: questions.length <= cfg.minQuestions ? "#94a3b8" : "#ef4444",
-                    cursor: questions.length <= cfg.minQuestions ? "not-allowed" : "pointer",
-                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   − 삭제
                 </button>
@@ -429,66 +344,48 @@ export default function NewExamPage() {
             </div>
           )}
 
-          {/* Question list - card style for mobile */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {/* Question rows */}
+          <div className="space-y-2">
             {questions.map((q, i) => (
               <div
                 key={q.questionNum}
-                style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  padding: "10px 12px",
-                  background: i % 2 === 0 ? "#fff" : "#f8fafc",
-                  borderRadius: 12,
-                  border: "1px solid #f1f5f9",
-                }}
+                className={cn(
+                  "flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 rounded-xl transition-colors",
+                  i % 2 === 0 ? "bg-background" : "bg-muted/30"
+                )}
               >
-                {/* Question number */}
-                <span style={{
-                  minWidth: 28, height: 28,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  borderRadius: 8,
-                  background: `${color}12`,
-                  color: color,
-                  fontWeight: 800, fontSize: 13,
-                  flexShrink: 0,
-                }}>
+                {/* Number badge */}
+                <span
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 text-white"
+                  style={{ background: colorHex }}
+                >
                   {q.questionNum}
                 </span>
 
-                {/* Answer selection */}
-                <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                {/* Answer buttons */}
+                <div className="flex-1 flex justify-center">
                   {q.isSubjective ? (
                     <input
                       type="number" min={0} max={999}
                       value={q.correctAnswer}
                       onChange={(e) => setAnswer(i, Number(e.target.value))}
-                      style={{
-                        width: 64, padding: "6px 8px",
-                        borderRadius: 8, border: "2px solid #e2e8f0",
-                        fontSize: 13, fontWeight: 800, textAlign: "center",
-                        fontFamily: "inherit", color: "#0f172a",
-                        background: "#f8fafc",
-                      }}
+                      className="w-16 rounded-lg border border-input bg-background px-2 py-1.5 text-center text-sm font-bold focus:outline-none focus:ring-2 focus:ring-ring/30"
                       placeholder="정답"
                     />
                   ) : (
-                    <div style={{ display: "flex", gap: 4 }}>
+                    <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((c) => (
                         <button
                           key={c}
                           type="button"
                           onClick={() => setAnswer(i, c)}
-                          style={{
-                            width: 30, height: 30, borderRadius: "50%",
-                            border: q.correctAnswer === c ? "none" : "1.5px solid #e2e8f0",
-                            background: q.correctAnswer === c ? color : "#fff",
-                            color: q.correctAnswer === c ? "#fff" : "#64748b",
-                            fontWeight: 700, fontSize: 13,
-                            cursor: "pointer", transition: "all 0.12s",
-                            boxShadow: q.correctAnswer === c ? `0 2px 6px ${color}44` : "none",
-                            transform: q.correctAnswer === c ? "scale(1.08)" : "scale(1)",
-                            padding: 0,
-                          }}
+                          className={cn(
+                            "w-8 h-8 rounded-full text-xs font-bold transition-all",
+                            q.correctAnswer === c
+                              ? "text-white shadow-md scale-110"
+                              : "bg-background border border-input text-muted-foreground hover:border-foreground/30"
+                          )}
+                          style={q.correctAnswer === c ? { background: colorHex } : undefined}
                         >
                           {c}
                         </button>
@@ -497,28 +394,33 @@ export default function NewExamPage() {
                   )}
                 </div>
 
-                {/* Score pill buttons */}
-                <div style={{ flexShrink: 0 }}>
-                  {renderScorePills(i, q.score)}
+                {/* Score pills */}
+                <div className="flex gap-1 shrink-0">
+                  {cfg.scoreOptions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setScore(i, s)}
+                      className={cn(
+                        "min-w-[30px] h-7 px-1.5 rounded-lg text-xs font-bold transition-all",
+                        q.score === s
+                          ? "text-white shadow-sm"
+                          : "bg-background border border-input text-muted-foreground hover:border-foreground/30"
+                      )}
+                      style={q.score === s ? { background: colorHex } : undefined}
+                    >
+                      {s}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Delete button (국어 only) */}
+                {/* Delete (국어 only) */}
                 {cfg.canDeleteQuestions && (
                   <button
                     type="button"
                     onClick={() => removeQuestion(i)}
                     disabled={questions.length <= cfg.minQuestions}
-                    title="문항 삭제"
-                    style={{
-                      width: 24, height: 24, borderRadius: "50%",
-                      border: "none", fontSize: 12,
-                      background: questions.length <= cfg.minQuestions ? "transparent" : "#fef2f2",
-                      color: questions.length <= cfg.minQuestions ? "#cbd5e1" : "#ef4444",
-                      cursor: questions.length <= cfg.minQuestions ? "not-allowed" : "pointer",
-                      transition: "all 0.15s",
-                      display: "inline-flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0, padding: 0,
-                    }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-muted-foreground hover:bg-red-50 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shrink-0"
                   >
                     ✕
                   </button>
@@ -527,43 +429,33 @@ export default function NewExamPage() {
             ))}
           </div>
 
-          {/* Total score warning */}
+          {/* Warning */}
           {totalMismatch && (
-            <div style={{
-              marginTop: 12, padding: "10px 14px",
-              background: "#fef2f2", border: "1px solid #fecaca",
-              borderRadius: 10, fontSize: 13, color: "#dc2626",
-              fontWeight: 600,
-            }}>
+            <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-600">
               ⚠️ 배점 합계가 {cfg.fixedTotal}점이 되어야 합니다. (현재 {maxScore}점, {maxScore > cfg.fixedTotal! ? `${maxScore - cfg.fixedTotal!}점 초과` : `${cfg.fixedTotal! - maxScore}점 부족`})
             </div>
           )}
         </div>
 
-        {error && <div className="alert alert-error">⚠️ {error}</div>}
+        {error && (
+          <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-medium text-red-600 flex items-center gap-2">
+            ⚠️ {error}
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={submitting || !title || totalMismatch}
-          className="btn btn-primary btn-lg btn-full"
-          style={{
-            background: totalMismatch ? "#94a3b8" : gradient,
-            boxShadow: totalMismatch ? "none" : `0 4px 20px ${color}44`,
-          }}
+          className={cn(
+            "w-full py-4 rounded-2xl text-base font-bold text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0"
+          )}
+          style={{ background: totalMismatch ? "#94a3b8" : colorHex }}
         >
-          {submitting ? <><span className="spinner" />등록 중...</> : "📝 시험 등록하기"}
+          {submitting ? (
+            <span className="inline-flex items-center gap-2"><span className="spinner" />등록 중...</span>
+          ) : "📝 시험 등록하기"}
         </button>
       </form>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  pageHeader: { marginBottom: 12 },
-  pageTitle: { fontSize: "clamp(22px,3vw,30px)", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em", marginBottom: 6 },
-  pageSubtitle: { fontSize: 14, color: "#64748b", marginBottom: 24 },
-  card: { background: "#fff", borderRadius: 20, padding: "20px 16px", boxShadow: "0 4px 16px rgba(0,0,0,0.07)", border: "1px solid #e2e8f0" },
-  cardTitle: { fontSize: 17, fontWeight: 800, color: "#0f172a", marginBottom: 16 },
-  subjectBtn: { padding: "10px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" },
-  countBtn: { padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: "none", transition: "all 0.15s", fontFamily: "inherit" },
-};

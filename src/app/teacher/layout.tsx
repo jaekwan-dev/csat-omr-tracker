@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import TeacherLogoutButton from "./TeacherLogoutButton";
+import { cn } from "@/lib/utils";
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -55,29 +56,30 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", flexDirection: "column" }}>
-      <header style={styles.header}>
-        <div className="container teacher-header-inner" style={styles.headerInner}>
-          {/* Brand Logo */}
-          <div style={styles.logoRow}>
-            <div style={styles.logo}>
-              <div style={styles.logoIconBox}>
-                <span style={{ fontSize: 16 }}>🎯</span>
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border shadow-sm">
+        <div className="mx-auto max-w-5xl px-4 flex flex-col md:flex-row items-center justify-between min-h-[64px] py-3 md:py-2 gap-4 md:gap-0">
+          
+          {/* Brand Logo & Mobile Logout */}
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+                <span className="text-xl">🎯</span>
               </div>
               <div>
-                <div style={styles.logoTitle}>OMR 관리자</div>
-                <div style={styles.logoSub}>교사 전용</div>
+                <div className="text-base font-black text-foreground leading-tight tracking-tight">OMR 관리자</div>
+                <div className="text-[11px] font-bold text-primary leading-tight">교사 전용</div>
               </div>
             </div>
 
-            {/* Mobile-Only Logout position */}
-            <div className="mobile-logout-only">
+            {/* Mobile-Only Logout */}
+            <div className="md:hidden">
               <TeacherLogoutButton />
             </div>
           </div>
 
-          {/* Floating Segmented Pill Control Navigation */}
-          <nav className="teacher-segmented-nav" style={styles.segmentedNav}>
+          {/* Segmented Pill Navigation */}
+          <nav className="flex items-center bg-secondary/70 p-1 rounded-full border border-border w-full md:w-auto overflow-x-auto overflow-y-hidden no-scrollbar">
             {navItems.map((item) => {
               const isActive = item.exact
                 ? pathname === item.href
@@ -87,112 +89,29 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`teacher-nav-pill ${isActive ? "active" : ""}`}
-                  style={{
-                    ...styles.navPill,
-                    ...(isActive ? styles.navPillActive : {}),
-                  }}
+                  className={cn(
+                    "inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap flex-1 md:flex-none",
+                    isActive
+                      ? "bg-background text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  )}
                 >
-                  <span style={{ display: "inline-flex", alignItems: "center" }}>{item.icon}</span>
+                  <span>{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* Desktop Logout position */}
-          <div className="desktop-logout-only">
+          {/* Desktop Logout */}
+          <div className="hidden md:block">
             <TeacherLogoutButton />
           </div>
+
         </div>
       </header>
 
-      <main style={{ flex: 1 }}>{children}</main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  header: {
-    position: "sticky",
-    top: 0,
-    zIndex: 50,
-    background: "rgba(255, 255, 255, 0.92)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    borderBottom: "1px solid #e2e8f0",
-    boxShadow: "0 2px 12px rgba(0, 0, 0, 0.03)",
-  },
-  headerInner: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    minHeight: 64,
-    gap: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
-  },
-  logoRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  logo: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
-  logoIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    background: "linear-gradient(135deg, #0f766e, #0891b2)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0 4px 10px rgba(8,145,178,0.25)",
-  },
-  logoTitle: {
-    fontSize: 16,
-    fontWeight: 900,
-    color: "#0f172a",
-    lineHeight: 1.1,
-    letterSpacing: "-0.02em",
-  },
-  logoSub: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#0f766e",
-    lineHeight: 1.1,
-  },
-  segmentedNav: {
-    display: "flex",
-    alignItems: "center",
-    background: "#f1f5f9",
-    padding: "4px",
-    borderRadius: 999,
-    gap: "2px",
-    border: "1px solid #e2e8f0",
-  },
-  navPill: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    padding: "8px 16px",
-    borderRadius: 999,
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#64748b",
-    textDecoration: "none",
-    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-    whiteSpace: "nowrap",
-  },
-  navPillActive: {
-    background: "#ffffff",
-    color: "#0f766e",
-    fontWeight: 900,
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04)",
-  },
-};
