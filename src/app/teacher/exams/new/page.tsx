@@ -1,12 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
-const SUBJECT_DEFAULTS: Record<string, { totalQuestions: number; startNum: number; label: string }> = {
-  KOREAN: { totalQuestions: 30, startNum: 1, label: "국어 (1~30번, 30문항)" },
-  MATH: { totalQuestions: 20, startNum: 1, label: "수학 (1~20번, 20문항)" },
-  ENGLISH: { totalQuestions: 28, startNum: 18, label: "영어 (18~45번, 28문항)" },
+/* ── Subject configuration ───────────────────────────────────────────── */
+
+interface SubjectConfig {
+  label: string;
+  totalQuestions: number;
+  minQuestions: number;
+  startNum: number;
+  scoreOptions: number[];
+  fixedTotal: number | null;
+  canDeleteQuestions: boolean;
+}
+
+const SUBJECT_CONFIG: Record<string, SubjectConfig> = {
+  KOREAN: {
+    label: "국어",
+    totalQuestions: 25,
+    minQuestions: 15,
+    startNum: 1,
+    scoreOptions: [4, 5, 6, 7],
+    fixedTotal: 100,
+    canDeleteQuestions: true,
+  },
+  MATH: {
+    label: "수학",
+    totalQuestions: 20,
+    minQuestions: 20,
+    startNum: 1,
+    scoreOptions: [2, 3, 4],
+    fixedTotal: null,
+    canDeleteQuestions: false,
+  },
+  ENGLISH: {
+    label: "영어",
+    totalQuestions: 28,
+    minQuestions: 28,
+    startNum: 18,
+    scoreOptions: [2, 3],
+    fixedTotal: 63,
+    canDeleteQuestions: false,
+  },
 };
 
 const SUBJECT_COLOR: Record<string, string> = { KOREAN: "#764ba2", MATH: "#f97316", ENGLISH: "#3b82f6" };
@@ -16,18 +52,27 @@ const SUBJECT_GRADIENT: Record<string, string> = {
   ENGLISH: "linear-gradient(135deg,#06b6d4,#3b82f6)",
 };
 
-interface QuestionInput { questionNum: number; correctAnswer: number; score: number; isSubjective: boolean; }
+/* ── Types ───────────────────────────────────────────────────────────── */
+
+interface QuestionInput {
+  questionNum: number;
+  correctAnswer: number;
+  score: number;
+  isSubjective: boolean;
+}
 
 function buildQuestions(subject: string): QuestionInput[] {
-  const def = SUBJECT_DEFAULTS[subject];
-  if (!def) return [];
-  return Array.from({ length: def.totalQuestions }, (_, i) => ({
-    questionNum: def.startNum + i,
+  const cfg = SUBJECT_CONFIG[subject];
+  if (!cfg) return [];
+  return Array.from({ length: cfg.totalQuestions }, (_, i) => ({
+    questionNum: cfg.startNum + i,
     correctAnswer: 1,
-    score: 2,
+    score: cfg.scoreOptions[0],
     isSubjective: false,
   }));
 }
+
+/* ── Component ───────────────────────────────────────────────────────── */
 
 export default function NewExamPage() {
   const router = useRouter();
@@ -38,10 +83,13 @@ export default function NewExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // Reset questions when subject changes
+  const cfg = SUBJECT_CONFIG[subject];
+
   useEffect(() => {
     setQuestions(buildQuestions(subject));
   }, [subject]);
+
+  /* ── Question helpers ─────────────────────────────────────────────── */
 
   function setAnswer(idx: number, answer: number) {
     setQuestions((prev) => {
@@ -50,6 +98,7 @@ export default function NewExamPage() {
       return n;
     });
   }
+
   function setScore(idx: number, score: number) {
     setQuestions((prev) => {
       const n = [...prev];
@@ -58,7 +107,6 @@ export default function NewExamPage() {
     });
   }
 
-  // Fill all scores at once
   function fillAllScores(score: number) {
     setQuestions((prev) => prev.map((q) => ({ ...q, score })));
   }
@@ -67,14 +115,52 @@ export default function NewExamPage() {
     setQuestions((prev) => {
       const n = [...prev];
       const isSubj = !n[idx].isSubjective;
-      n[idx] = { 
-        ...n[idx], 
+      n[idx] = {
+        ...n[idx],
         isSubjective: isSubj,
-        correctAnswer: isSubj ? 0 : 1 // 주관식이면 0으로, 객관식이면 1로 초기화
+        correctAnswer: isSubj ? 0 : 1,
       };
       return n;
     });
   }
+
+  /* ── 국어: 문항 삭제 / 복원 ─────────────────────────────────────── */
+
+  function removeQuestion(idx: number) {
+    setQuestions((prev) => {
+      if (prev.length <= cfg.minQuestions) return prev;
+      const n = [...prev];
+      n.splice(idx, 1);
+      return n.map((q, i) => ({ ...q, questionNum: cfg.startNum + i }));
+    });
+  }
+
+  function addQuestion() {
+    setQuestions((prev) => {
+      if (prev.length >= cfg.totalQuestions) return prev;
+      const nextNum = cfg.startNum + prev.length;
+      return [...prev, {
+        questionNum: nextNum,
+        correctAnswer: 1,
+        score: cfg.scoreOptions[0],
+        isSubjective: false,
+      }];
+    });
+  }
+
+  /* ── Computed values ──────────────────────────────────────────────── */
+
+  const maxScore = useMemo(() => questions.reduce((s, q) => s + q.score, 0), [questions]);
+  const color = SUBJECT_COLOR[subject];
+  const gradient = SUBJECT_GRADIENT[subject];
+
+  const totalScoreLabel = cfg.fixedTotal
+    ? `${cfg.fixedTotal}점 만점`
+    : null;
+
+  const totalMismatch = cfg.fixedTotal !== null && maxScore !== cfg.fixedTotal;
+
+  /* ── Submit ───────────────────────────────────────────────────────── */
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -84,6 +170,12 @@ export default function NewExamPage() {
     }
     if (questions.some((q) => q.isSubjective && (q.correctAnswer < 0 || q.correctAnswer > 999))) {
       setError("주관식 문항의 정답은 0~999 사이로 입력하세요."); return;
+    }
+    if (questions.some((q) => !cfg.scoreOptions.includes(q.score))) {
+      setError(`배점은 ${cfg.scoreOptions.join(", ")}점만 가능합니다.`); return;
+    }
+    if (cfg.fixedTotal !== null && maxScore !== cfg.fixedTotal) {
+      setError(`총 배점 합계가 ${cfg.fixedTotal}점이 되어야 합니다. (현재 ${maxScore}점)`); return;
     }
     setError("");
     setSubmitting(true);
@@ -107,11 +199,10 @@ export default function NewExamPage() {
       return;
     }
 
-    const def = SUBJECT_DEFAULTS[subject];
     const res = await fetch("/api/teacher/exams", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject, title: title.trim(), startNum: def.startNum, explanationPdfUrl, questions }),
+      body: JSON.stringify({ subject, title: title.trim(), startNum: cfg.startNum, explanationPdfUrl, questions }),
     });
     setSubmitting(false);
     if (!res.ok) {
@@ -123,12 +214,45 @@ export default function NewExamPage() {
     }
   }
 
-  const color = SUBJECT_COLOR[subject];
-  const gradient = SUBJECT_GRADIENT[subject];
-  const maxScore = questions.reduce((s, q) => s + q.score, 0);
+  /* ── Score pill button renderer ───────────────────────────────────── */
+
+  function renderScorePills(questionIdx: number, currentScore: number) {
+    return (
+      <div style={{ display: "flex", gap: 3 }}>
+        {cfg.scoreOptions.map((s) => {
+          const isSelected = currentScore === s;
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setScore(questionIdx, s)}
+              style={{
+                minWidth: 32, height: 28,
+                padding: "0 6px",
+                borderRadius: 8,
+                border: isSelected ? "none" : "1.5px solid #e2e8f0",
+                background: isSelected ? color : "#fff",
+                color: isSelected ? "#fff" : "#64748b",
+                fontWeight: 700, fontSize: 12,
+                cursor: "pointer",
+                transition: "all 0.12s",
+                boxShadow: isSelected ? `0 2px 6px ${color}44` : "none",
+                fontFamily: "inherit",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {s}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* ── Render ────────────────────────────────────────────────────────── */
 
   return (
-    <div className="container" style={{ paddingTop: 32, paddingBottom: 80, maxWidth: 720 }}>
+    <div className="container" style={{ paddingTop: 24, paddingBottom: 80, maxWidth: 720, paddingLeft: 16, paddingRight: 16 }}>
       <div style={styles.pageHeader}>
         <button onClick={() => router.push("/teacher/exams")} className="btn btn-ghost btn-sm">← 돌아가기</button>
       </div>
@@ -145,7 +269,7 @@ export default function NewExamPage() {
             <div>
               <label className="label">과목 선택</label>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {Object.entries(SUBJECT_DEFAULTS).map(([s, def]) => (
+                {Object.entries(SUBJECT_CONFIG).map(([s, c]) => (
                   <button
                     key={s}
                     type="button"
@@ -158,10 +282,26 @@ export default function NewExamPage() {
                       boxShadow: subject === s ? `0 4px 14px ${SUBJECT_COLOR[s]}44` : "none",
                     }}
                   >
-                    {def.label}
+                    {c.label}
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Subject Info Banner */}
+            <div style={{
+              background: `${color}0a`,
+              border: `1.5px solid ${color}22`,
+              borderRadius: 12,
+              padding: "12px 16px",
+              fontSize: 13,
+              color: "#475569",
+              lineHeight: 1.7,
+            }}>
+              <div>📋 <strong>{cfg.label}</strong> 설정</div>
+              <div>• 문항 수: {cfg.canDeleteQuestions ? `${cfg.minQuestions}~${cfg.totalQuestions}문항 (삭제 가능)` : `${cfg.totalQuestions}문항 (고정)`}</div>
+              <div>• 배점: {cfg.scoreOptions.join(", ")}점</div>
+              {cfg.fixedTotal && <div>• 만점: {cfg.fixedTotal}점</div>}
             </div>
 
             {/* Title */}
@@ -201,10 +341,10 @@ export default function NewExamPage() {
         {/* Questions */}
         <div style={styles.card}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
-            <h2 style={styles.cardTitle}>문항별 정답 및 배점</h2>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <h2 style={{ ...styles.cardTitle, marginBottom: 0 }}>문항별 정답 및 배점</h2>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontSize: 13, color: "#64748b" }}>전체 배점:</span>
-              {[2, 3].map((s) => (
+              {cfg.scoreOptions.map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -215,91 +355,201 @@ export default function NewExamPage() {
                   전체 {s}점
                 </button>
               ))}
-              <span style={{ fontSize: 13, fontWeight: 800, color }}>합계 {maxScore}점</span>
             </div>
           </div>
 
-          <div style={styles.qTableWrap}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead style={{ background: gradient }}>
-                <tr>
-                  <th style={{ ...styles.th, color: "#fff", width: 60 }}>번호</th>
-                  <th style={{ ...styles.th, color: "#fff" }}>정답 입력</th>
-                  <th style={{ ...styles.th, color: "#fff", width: 80 }}>배점</th>
-                </tr>
-              </thead>
-              <tbody>
-                {questions.map((q, i) => (
-                  <tr key={q.questionNum} style={{ borderBottom: "1px solid #f1f5f9", background: i % 2 === 0 ? "#fff" : "#fafbff" }}>
-                    <td style={{ ...styles.td, fontWeight: 700, color: "#374151", width: 60 }}>
-                      {q.questionNum}
-                    </td>
-                    <td style={styles.td}>
-                      {q.isSubjective ? (
-                        <input
-                          type="number" min={0} max={999}
-                          value={q.correctAnswer}
-                          onChange={(e) => setAnswer(i, Number(e.target.value))}
-                          style={{
-                            width: 80, padding: "8px 12px",
-                            borderRadius: 10, border: "2px solid #e2e8f0",
-                            fontSize: 14, fontWeight: 800, textAlign: "center",
-                            fontFamily: "inherit", color: "#0f172a",
-                            background: "#f8fafc",
-                          }}
-                          placeholder="정답"
-                        />
-                      ) : (
-                        <div style={{ display: "flex", gap: 6 }}>
-                          {[1, 2, 3, 4, 5].map((c) => (
-                            <button
-                              key={c}
-                              type="button"
-                              onClick={() => setAnswer(i, c)}
-                              style={{
-                                width: 36, height: 36, borderRadius: "50%",
-                                border: q.correctAnswer === c ? "none" : "1.5px solid #e2e8f0",
-                                background: q.correctAnswer === c ? color : "#fff",
-                                color: q.correctAnswer === c ? "#fff" : "#64748b",
-                                fontWeight: 700, fontSize: 14,
-                                cursor: "pointer", transition: "all 0.12s",
-                                boxShadow: q.correctAnswer === c ? `0 2px 8px ${color}55` : "none",
-                                transform: q.correctAnswer === c ? "scale(1.1)" : "scale(1)",
-                              }}
-                            >
-                              {c}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td style={styles.td}>
-                      <input
-                        type="number" min={1} max={10}
-                        value={q.score}
-                        onChange={(e) => setScore(i, Number(e.target.value))}
-                        style={{
-                          width: 56, padding: "7px 8px",
-                          borderRadius: 10, border: "1.5px solid #e2e8f0",
-                          fontSize: 14, fontWeight: 700, textAlign: "center",
-                          fontFamily: "inherit", color: "#0f172a",
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Score summary bar */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 14px", marginBottom: 14,
+            background: totalMismatch ? "#fef2f2" : `${color}08`,
+            border: `1.5px solid ${totalMismatch ? "#fecaca" : `${color}18`}`,
+            borderRadius: 10,
+          }}>
+            <span style={{
+              fontSize: 14, fontWeight: 800,
+              color: totalMismatch ? "#dc2626" : color,
+            }}>
+              합계 {maxScore}점
+            </span>
+            {totalScoreLabel && (
+              <span style={{
+                fontSize: 13, fontWeight: 600,
+                color: totalMismatch ? "#dc2626" : "#64748b",
+              }}>
+                {totalMismatch
+                  ? `${maxScore > cfg.fixedTotal! ? `${maxScore - cfg.fixedTotal!}점 초과` : `${cfg.fixedTotal! - maxScore}점 부족`} (목표 ${cfg.fixedTotal}점)`
+                  : `✓ ${totalScoreLabel}`
+                }
+              </span>
+            )}
           </div>
+
+          {/* 국어: 문항 추가/삭제 컨트롤 */}
+          {cfg.canDeleteQuestions && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+              marginBottom: 14, padding: "10px 14px",
+              background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0",
+            }}>
+              <span style={{ fontSize: 13, color: "#475569", fontWeight: 600 }}>
+                현재 {questions.length}문항
+              </span>
+              <span style={{ fontSize: 12, color: "#94a3b8" }}>
+                (최소 {cfg.minQuestions} ~ 최대 {cfg.totalQuestions})
+              </span>
+              <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={addQuestion}
+                  disabled={questions.length >= cfg.totalQuestions}
+                  style={{
+                    ...styles.countBtn,
+                    background: questions.length >= cfg.totalQuestions ? "#e2e8f0" : `${color}15`,
+                    color: questions.length >= cfg.totalQuestions ? "#94a3b8" : color,
+                    cursor: questions.length >= cfg.totalQuestions ? "not-allowed" : "pointer",
+                  }}
+                >
+                  + 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeQuestion(questions.length - 1)}
+                  disabled={questions.length <= cfg.minQuestions}
+                  style={{
+                    ...styles.countBtn,
+                    background: questions.length <= cfg.minQuestions ? "#e2e8f0" : "#fef2f2",
+                    color: questions.length <= cfg.minQuestions ? "#94a3b8" : "#ef4444",
+                    cursor: questions.length <= cfg.minQuestions ? "not-allowed" : "pointer",
+                  }}
+                >
+                  − 삭제
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Question list - card style for mobile */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {questions.map((q, i) => (
+              <div
+                key={q.questionNum}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "10px 12px",
+                  background: i % 2 === 0 ? "#fff" : "#f8fafc",
+                  borderRadius: 12,
+                  border: "1px solid #f1f5f9",
+                }}
+              >
+                {/* Question number */}
+                <span style={{
+                  minWidth: 28, height: 28,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  borderRadius: 8,
+                  background: `${color}12`,
+                  color: color,
+                  fontWeight: 800, fontSize: 13,
+                  flexShrink: 0,
+                }}>
+                  {q.questionNum}
+                </span>
+
+                {/* Answer selection */}
+                <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                  {q.isSubjective ? (
+                    <input
+                      type="number" min={0} max={999}
+                      value={q.correctAnswer}
+                      onChange={(e) => setAnswer(i, Number(e.target.value))}
+                      style={{
+                        width: 64, padding: "6px 8px",
+                        borderRadius: 8, border: "2px solid #e2e8f0",
+                        fontSize: 13, fontWeight: 800, textAlign: "center",
+                        fontFamily: "inherit", color: "#0f172a",
+                        background: "#f8fafc",
+                      }}
+                      placeholder="정답"
+                    />
+                  ) : (
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {[1, 2, 3, 4, 5].map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setAnswer(i, c)}
+                          style={{
+                            width: 30, height: 30, borderRadius: "50%",
+                            border: q.correctAnswer === c ? "none" : "1.5px solid #e2e8f0",
+                            background: q.correctAnswer === c ? color : "#fff",
+                            color: q.correctAnswer === c ? "#fff" : "#64748b",
+                            fontWeight: 700, fontSize: 13,
+                            cursor: "pointer", transition: "all 0.12s",
+                            boxShadow: q.correctAnswer === c ? `0 2px 6px ${color}44` : "none",
+                            transform: q.correctAnswer === c ? "scale(1.08)" : "scale(1)",
+                            padding: 0,
+                          }}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Score pill buttons */}
+                <div style={{ flexShrink: 0 }}>
+                  {renderScorePills(i, q.score)}
+                </div>
+
+                {/* Delete button (국어 only) */}
+                {cfg.canDeleteQuestions && (
+                  <button
+                    type="button"
+                    onClick={() => removeQuestion(i)}
+                    disabled={questions.length <= cfg.minQuestions}
+                    title="문항 삭제"
+                    style={{
+                      width: 24, height: 24, borderRadius: "50%",
+                      border: "none", fontSize: 12,
+                      background: questions.length <= cfg.minQuestions ? "transparent" : "#fef2f2",
+                      color: questions.length <= cfg.minQuestions ? "#cbd5e1" : "#ef4444",
+                      cursor: questions.length <= cfg.minQuestions ? "not-allowed" : "pointer",
+                      transition: "all 0.15s",
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0, padding: 0,
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Total score warning */}
+          {totalMismatch && (
+            <div style={{
+              marginTop: 12, padding: "10px 14px",
+              background: "#fef2f2", border: "1px solid #fecaca",
+              borderRadius: 10, fontSize: 13, color: "#dc2626",
+              fontWeight: 600,
+            }}>
+              ⚠️ 배점 합계가 {cfg.fixedTotal}점이 되어야 합니다. (현재 {maxScore}점, {maxScore > cfg.fixedTotal! ? `${maxScore - cfg.fixedTotal!}점 초과` : `${cfg.fixedTotal! - maxScore}점 부족`})
+            </div>
+          )}
         </div>
 
         {error && <div className="alert alert-error">⚠️ {error}</div>}
 
         <button
           type="submit"
-          disabled={submitting || !title}
+          disabled={submitting || !title || totalMismatch}
           className="btn btn-primary btn-lg btn-full"
-          style={{ background: gradient, boxShadow: `0 4px 20px ${color}44` }}
+          style={{
+            background: totalMismatch ? "#94a3b8" : gradient,
+            boxShadow: totalMismatch ? "none" : `0 4px 20px ${color}44`,
+          }}
         >
           {submitting ? <><span className="spinner" />등록 중...</> : "📝 시험 등록하기"}
         </button>
@@ -311,11 +561,9 @@ export default function NewExamPage() {
 const styles: Record<string, React.CSSProperties> = {
   pageHeader: { marginBottom: 12 },
   pageTitle: { fontSize: "clamp(22px,3vw,30px)", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em", marginBottom: 6 },
-  pageSubtitle: { fontSize: 14, color: "#64748b", marginBottom: 28 },
-  card: { background: "#fff", borderRadius: 20, padding: "24px 24px", boxShadow: "0 4px 16px rgba(0,0,0,0.07)", border: "1px solid #e2e8f0" },
+  pageSubtitle: { fontSize: 14, color: "#64748b", marginBottom: 24 },
+  card: { background: "#fff", borderRadius: 20, padding: "20px 16px", boxShadow: "0 4px 16px rgba(0,0,0,0.07)", border: "1px solid #e2e8f0" },
   cardTitle: { fontSize: 17, fontWeight: 800, color: "#0f172a", marginBottom: 16 },
   subjectBtn: { padding: "10px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" },
-  qTableWrap: { borderRadius: 12, overflow: "hidden", border: "1px solid #e2e8f0" },
-  th: { padding: "12px 14px", fontSize: 12, fontWeight: 700, textAlign: "left", letterSpacing: "0.04em" },
-  td: { padding: "10px 14px", verticalAlign: "middle" },
+  countBtn: { padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: "none", transition: "all 0.15s", fontFamily: "inherit" },
 };
