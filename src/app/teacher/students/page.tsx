@@ -395,20 +395,20 @@ export default function StudentManagementPage() {
       {/* Responsive Modal (Student Add/Edit) */}
       {isModalOpen && (
         <div
-          className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="bg-card rounded-3xl p-6 sm:p-7 w-full max-w-sm shadow-xl border border-border animate-in zoom-in-95 duration-200"
+            className="bg-white dark:bg-zinc-950 rounded-3xl p-6 sm:p-7 w-full max-w-sm shadow-xl border border-border animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-foreground">
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
                 {modalMode === "ADD" ? "➕ 새 학생 추가" : "✏️ 학생 정보 수정"}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground text-lg px-2"
+                className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white text-lg px-2"
               >
                 ✕
               </button>
@@ -416,7 +416,7 @@ export default function StudentManagementPage() {
 
             <form onSubmit={handleSave} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-foreground ml-1">학번 (4자리)</label>
+                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">학번 (4자리)</label>
                 <input
                   type="text"
                   placeholder="예: 1101"
@@ -425,55 +425,55 @@ export default function StudentManagementPage() {
                   disabled={modalMode === "EDIT"}
                   maxLength={4}
                   autoFocus
-                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:opacity-50"
+                  className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 disabled:opacity-50 transition-all shadow-sm"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-foreground ml-1">이름</label>
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">이름</label>
                   <input
                     type="text"
                     placeholder="홍길동"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 transition-all shadow-sm"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-foreground ml-1">PIN (4자리)</label>
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">PIN (4자리)</label>
                   <input
                     type="text"
                     maxLength={4}
                     placeholder="1234"
                     value={formPin}
                     onChange={(e) => setFormPin(e.target.value.replace(/\D/g, ""))}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 font-mono tracking-widest"
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 font-mono tracking-widest transition-all shadow-sm"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-foreground ml-1">학년</label>
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">학년</label>
                   <input
                     type="number"
                     min={1}
                     max={3}
                     value={formGrade}
                     onChange={(e) => setFormGrade(e.target.value)}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 transition-all shadow-sm"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-foreground ml-1">반</label>
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 ml-1">반</label>
                   <input
                     type="number"
                     min={1}
                     max={20}
                     value={formClass}
                     onChange={(e) => setFormClass(e.target.value)}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -508,35 +508,35 @@ export default function StudentManagementPage() {
       {/* CSV Bulk Upload Modal */}
       {isCsvModalOpen && (
         <div
-          className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setIsCsvModalOpen(false)}
         >
           <div
-            className="bg-card rounded-3xl p-6 sm:p-7 w-full max-w-sm shadow-xl border border-border animate-in zoom-in-95 duration-200"
+            className="bg-white dark:bg-zinc-950 rounded-3xl p-6 sm:p-7 w-full max-w-sm shadow-xl border border-border animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">📄 CSV 대량 등록</h2>
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">📄 CSV 대량 등록</h2>
               <button
                 onClick={() => setIsCsvModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground text-lg px-2"
+                className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white text-lg px-2"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-[13px] text-muted-foreground mb-5 leading-relaxed font-medium">
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-400 mb-5 leading-relaxed font-medium">
               엑셀/CSV 양식을 업로드하여 수십 명의 학생을 한 번에 등록합니다.
-              <br />최초 PIN 번호는 자동으로 <strong className="text-foreground">0000</strong>으로 설정됩니다.
+              <br />최초 PIN 번호는 자동으로 <strong className="text-zinc-900 dark:text-white">0000</strong>으로 설정됩니다.
             </p>
 
             <form onSubmit={handleCsvUpload} className="flex flex-col gap-4">
-              <div className="p-5 bg-secondary/30 rounded-2xl border-2 border-dashed border-border text-center">
+              <div className="p-5 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 text-center">
                 <input
                   type="file"
                   accept=".csv"
                   onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                  className="w-full text-sm text-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-secondary file:text-secondary-foreground file:font-bold cursor-pointer"
+                  className="w-full text-sm text-zinc-900 dark:text-zinc-100 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-zinc-200 dark:file:bg-zinc-800 file:text-zinc-900 dark:file:text-zinc-100 file:font-bold cursor-pointer"
                 />
               </div>
 
