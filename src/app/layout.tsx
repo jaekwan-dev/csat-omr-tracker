@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./../styles/globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -24,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={cn("font-sans antialiased", geist.variable)}>
-      <body className="bg-background text-foreground min-h-screen">{children}</body>
+      <body className="bg-background text-foreground min-h-screen">{children}<Toaster /></body>
     </html>
   );
 }

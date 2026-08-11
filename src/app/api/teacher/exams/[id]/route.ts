@@ -75,7 +75,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 // DELETE /api/teacher/exams/[id] → 시험 삭제
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!getTeacherSessionFromRequest(req)) {
+  if (!(await getTeacherSessionFromRequest(req))) {
     return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
   }
   const { id } = await params;
