@@ -5,6 +5,7 @@ import { Loader2, TrendingUp, Trophy, Target, FileText, BookOpen, Calculator, Gl
 import { cn } from "@/lib/utils";
 
 import StudentHeader from "@/components/StudentHeader";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
 interface Summary {
   totalExams: number;
@@ -34,30 +35,21 @@ interface ChartItem {
   date: string;
 }
 
-const SUBJECT_META: Record<string, { label: string; icon: any; color: string; bgLight: string; text: string; gradient: string }> = {
+const SUBJECT_META: Record<string, { label: string; icon: any; colorVar: string }> = {
   KOREAN: { 
     label: "국어", 
     icon: BookOpen,
-    color: "bg-purple-400", 
-    bgLight: "bg-purple-50", 
-    text: "text-purple-500", 
-    gradient: "from-purple-400 to-purple-500" 
+    colorVar: "var(--color-subject-korean)", 
   },
   MATH: { 
     label: "수학", 
     icon: Calculator,
-    color: "bg-orange-400", 
-    bgLight: "bg-orange-50", 
-    text: "text-orange-500", 
-    gradient: "from-orange-400 to-orange-500" 
+    colorVar: "var(--color-subject-math)", 
   },
   ENGLISH: { 
     label: "영어", 
     icon: Globe,
-    color: "bg-blue-400", 
-    bgLight: "bg-blue-50", 
-    text: "text-blue-500", 
-    gradient: "from-blue-400 to-blue-500" 
+    colorVar: "var(--color-subject-english)", 
   },
 };
 
@@ -94,9 +86,12 @@ export default function StatsPage() {
   const filteredChartData = chartData.filter((item) => item.subject === selectedSubject);
 
   return (
-    <div className="min-h-screen bg-muted/20 flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen bg-muted/20 flex flex-col relative overflow-x-hidden transition-colors duration-500">
       {/* Background decoration */}
-      <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-secondary/50 to-transparent -z-10 pointer-events-none" />
+      <div 
+        className="absolute top-0 left-0 right-0 h-[260px] -z-10 pointer-events-none transition-all duration-500" 
+        style={{ background: `linear-gradient(to bottom, color-mix(in oklch, ${SUBJECT_META[selectedSubject]?.colorVar || 'var(--primary)'} 25%, transparent), transparent)` }}
+      />
       
       <StudentHeader />
 
@@ -117,13 +112,17 @@ export default function StatsPage() {
             <p className="text-sm font-bold text-muted-foreground">데이터를 분석하는 중...</p>
           </div>
         ) : !hasData || chartData.length === 0 ? (
-          <div className="bg-card rounded-3xl p-10 text-center border border-border shadow-sm flex flex-col items-center justify-center min-h-[300px]">
-            <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-5">
-              <TrendingUp className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-black text-foreground mb-2">아직 등록된 성적 데이터가 없습니다</h3>
-            <p className="text-sm font-medium text-muted-foreground">홈 화면에서 시험에 응시하면 분석 그래프가 생성됩니다!</p>
-          </div>
+          <Empty className="min-h-[300px] border-none bg-card rounded-3xl shadow-sm mt-4">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <TrendingUp />
+              </EmptyMedia>
+              <EmptyTitle>아직 등록된 성적 데이터가 없습니다</EmptyTitle>
+              <EmptyDescription>
+                홈 화면에서 시험에 응시하면 분석 그래프가 생성됩니다!
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
@@ -164,13 +163,14 @@ export default function StatsPage() {
                       key={tab.id}
                       onClick={() => setSelectedSubject(tab.id)}
                       className={cn(
-                        "flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-3 rounded-2xl transition-all duration-300",
+                        "flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-3 rounded-2xl transition-all duration-300 border",
                         isActive 
-                          ? cn(meta.bgLight, meta.text, "shadow-inner scale-[1.02]") 
-                          : "text-muted-foreground hover:bg-secondary"
+                          ? "text-white shadow-md scale-[1.02] border-transparent" 
+                          : "text-muted-foreground hover:bg-secondary border-transparent hover:border-border"
                       )}
+                      style={isActive ? { backgroundColor: meta.colorVar } : {}}
                     >
-                      <Icon className={cn("w-5 h-5", isActive ? meta.text : "opacity-70")} />
+                      <Icon className={cn("w-5 h-5", isActive ? "text-white" : "opacity-70")} />
                       <span className="text-xs sm:text-sm font-bold">{meta.label}</span>
                     </button>
                   );
@@ -203,26 +203,26 @@ export default function StatsPage() {
                       return (
                         <div key={item.id} className="flex-1 min-w-0 flex flex-col items-center h-full justify-end group">
                           {/* Tooltip / Label */}
-                          <div className={cn(
-                            "text-[10px] sm:text-xs font-black mb-2 opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 bg-foreground text-background px-2 py-1 rounded-md pointer-events-none z-10 whitespace-nowrap",
-                            meta.text // fallback for non-hover state if desired
-                          )}>
+                          <div 
+                            className="text-[10px] sm:text-xs font-black mb-2 opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 bg-foreground text-background px-2 py-1 rounded-md pointer-events-none z-10 whitespace-nowrap"
+                            style={{ color: meta.colorVar }}
+                          >
                             {item.score}점
                           </div>
                           {/* Score Label Default */}
-                          <div className={cn("text-[10px] sm:text-xs font-black mb-1 transition-colors", meta.text)}>
+                          <div 
+                            className="text-[10px] sm:text-xs font-black mb-1 transition-colors"
+                            style={{ color: meta.colorVar }}
+                          >
                             {item.score}
                           </div>
                           
                           {/* Bar Graphic */}
                           <div
-                            className={cn(
-                              "w-full max-w-[40px] rounded-t-xl transition-all duration-500 ease-out shadow-sm group-hover:brightness-110",
-                              meta.gradient
-                            )}
+                            className="w-full max-w-[40px] rounded-t-xl transition-all duration-500 ease-out shadow-sm group-hover:brightness-110"
                             style={{ 
                               height: `${heightPercent}%`,
-                              background: `var(--tw-gradient-stops)`
+                              background: `linear-gradient(to top, color-mix(in oklch, ${meta.colorVar} 80%, transparent), ${meta.colorVar})`
                             }}
                           />
                         </div>
@@ -277,7 +277,13 @@ export default function StatsPage() {
                     
                     <div className="flex justify-between items-start mb-5">
                       <div className="flex items-center gap-4">
-                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-inner bg-gradient-to-br", meta.gradient)}>
+                        <div 
+                          className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner"
+                          style={{
+                            backgroundColor: `color-mix(in oklch, ${meta.colorVar} 15%, transparent)`,
+                            color: meta.colorVar
+                          }}
+                        >
                           <Icon className="w-6 h-6 drop-shadow-sm" />
                         </div>
                         <div>
@@ -290,7 +296,7 @@ export default function StatsPage() {
                     <div className="grid grid-cols-4 gap-2 sm:gap-4 bg-muted/30 p-3 sm:p-4 rounded-2xl text-center">
                       <div>
                         <div className="text-[10px] sm:text-xs font-bold text-muted-foreground mb-1">평균 점수</div>
-                        <div className={cn("text-base sm:text-lg font-black", meta.text)}>{stat.avgScore}점</div>
+                        <div className="text-base sm:text-lg font-black" style={{ color: meta.colorVar }}>{stat.avgScore}점</div>
                       </div>
                       <div>
                         <div className="text-[10px] sm:text-xs font-bold text-muted-foreground mb-1">최고 점수</div>

@@ -85,9 +85,12 @@ export default function StudentHomeClient({
   }, [subjectUnsubmittedExams, searchQuery, currentMeta]);
 
   return (
-    <div className="min-h-screen bg-muted/20 flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen bg-muted/20 flex flex-col relative overflow-x-hidden transition-colors duration-500">
       {/* Background decoration */}
-      <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-secondary/50 to-transparent -z-10 pointer-events-none" />
+      <div 
+        className="absolute top-0 left-0 right-0 h-[260px] -z-10 pointer-events-none transition-all duration-500" 
+        style={{ background: `linear-gradient(to bottom, color-mix(in oklch, ${currentMeta.colorVar} 25%, transparent), transparent)` }}
+      />
 
       {/* Top Navigation Header */}
       <StudentHeader session={session} />
@@ -107,8 +110,8 @@ export default function StudentHomeClient({
         {/* Filter Control Card */}
         <div className="bg-card rounded-3xl p-4 sm:p-5 border border-border shadow-sm flex flex-col gap-4">
           
-          {/* Subject Filter (Chips) */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+          {/* Subject Filter Grid */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {(Object.keys(SUBJECT_META) as Subject[]).map((subjKey) => {
               const meta = SUBJECT_META[subjKey];
               const isSelected = selectedSubjectFilter === subjKey;
@@ -118,25 +121,32 @@ export default function StudentHomeClient({
                   key={subjKey}
                   onClick={() => setSelectedSubjectFilter(subjKey)}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all shrink-0 border",
-                    isSelected
-                      ? "border-transparent text-white shadow-md scale-105"
-                      : "bg-card text-muted-foreground border-border hover:bg-secondary"
+                    "flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-3 sm:py-3.5 rounded-2xl border transition-all duration-300",
+                    isSelected 
+                      ? "text-white shadow-md scale-[1.02] border-transparent" 
+                      : "bg-secondary text-secondary-foreground border-transparent hover:border-border hover:bg-muted"
                   )}
                   style={isSelected ? { backgroundColor: meta.colorVar } : {}}
                 >
-                  <meta.icon className="w-4 h-4" />
-                  {meta.label}
-                  <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", isSelected ? "bg-white/20" : "bg-muted")}>
-                    {count}
-                  </span>
+                  <meta.icon className={cn("w-5 h-5", isSelected ? "text-white" : "text-muted-foreground")} />
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs sm:text-sm font-bold">{meta.label}</span>
+                    <span className={cn("text-[10px] sm:text-xs font-semibold", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                      ({count})
+                    </span>
+                  </div>
                 </button>
               );
             })}
           </div>
 
           {/* Search Box */}
-          <div className="flex items-center gap-2 bg-background rounded-2xl px-4 py-3 border border-input focus-within:ring-2 focus-within:ring-ring/30 focus-within:border-primary/50 transition-all">
+          <div 
+            className="flex items-center gap-2 bg-background rounded-2xl px-4 py-3 border border-input focus-within:ring-2 transition-all"
+            style={{ 
+              "--tw-ring-color": `color-mix(in oklch, ${currentMeta.colorVar} 30%, transparent)`,
+            } as React.CSSProperties}
+          >
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <input
               type="text"
@@ -183,7 +193,7 @@ export default function StudentHomeClient({
               {isAllCompleted && !searchQuery && (
                 <EmptyContent>
                   <Link
-                    href="/history"
+                    href={`/history?subject=${selectedSubjectFilter}`}
                     className="mt-4 inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md transition-transform hover:-translate-y-0.5"
                     style={{ backgroundColor: currentMeta.colorVar }}
                   >

@@ -67,7 +67,7 @@ export function ExamStatsClient({ exam }: { exam: ExamWithStatsData }) {
   const [correctRateSort, setCorrectRateSort] = useState<"none" | "asc" | "desc">("none")
   const [filterGrade, setFilterGrade] = useState<string>("ALL")
   const [filterClass, setFilterClass] = useState<string>("ALL")
-  
+
   const cfg = SUBJECT_CONFIG[exam.subject]
 
   // Summary stats
@@ -80,18 +80,18 @@ export function ExamStatsClient({ exam }: { exam: ExamWithStatsData }) {
   const questionStats = useMemo(() => {
     const stats = exam.questions.map((q) => {
       let correctCount = 0
-      
+
       exam.submissions.forEach((sub) => {
         const studentAnswerStr = sub.answers[q.questionNum.toString()]
         const studentAnswer = studentAnswerStr !== undefined ? Number(studentAnswerStr) : -1
-        
+
         if (studentAnswer === q.correctAnswer) {
           correctCount++
         }
       })
 
       const correctRate = totalSubs > 0 ? Math.round((correctCount / totalSubs) * 100) : 0
-      
+
       return {
         ...q,
         correctCount,
@@ -118,7 +118,7 @@ export function ExamStatsClient({ exam }: { exam: ExamWithStatsData }) {
 
     // 2. 점수 내림차순 정렬
     const sorted = [...filtered].sort((a, b) => b.totalScore - a.totalScore)
-    
+
     // 3. 석차 부여
     let currentRank = 1
     return sorted.map((s, i) => {
@@ -211,7 +211,7 @@ export function ExamStatsClient({ exam }: { exam: ExamWithStatsData }) {
                         size="sm"
                         className="-mr-3 h-8 data-[state=open]:bg-accent"
                         onClick={() => {
-                          setCorrectRateSort(prev => 
+                          setCorrectRateSort(prev =>
                             prev === "none" ? "desc" : prev === "desc" ? "asc" : "none"
                           )
                         }}
@@ -234,9 +234,6 @@ export function ExamStatsClient({ exam }: { exam: ExamWithStatsData }) {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <span className="tabular-nums font-bold">{q.correctRate}%</span>
-                          {q.correctRate < 40 && (
-                            <Badge variant="destructive" className="px-1.5 text-[10px]">취약</Badge>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -261,14 +258,14 @@ export function ExamStatsClient({ exam }: { exam: ExamWithStatsData }) {
                   <SelectItem value="3">3학년</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Select value={filterClass} onValueChange={(v) => setFilterClass(v || "ALL")}>
                 <SelectTrigger className="w-[90px] bg-background">
                   <SelectValue placeholder="반" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">전체 반</SelectItem>
-                  {[1,2,3,4,5,6,7,8,9,10,11,12].map(c => (
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(c => (
                     <SelectItem key={c} value={c.toString()}>{c}반</SelectItem>
                   ))}
                 </SelectContent>
