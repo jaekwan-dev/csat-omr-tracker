@@ -220,7 +220,13 @@ export function GradeListClient({ initialExams }: { initialExams: ExamWithSubmis
             onValueChange={(val) => setSelectedExamId(val === "ALL" ? "ALL" : Number(val))}
           >
             <SelectTrigger className="w-full md:w-[220px]">
-              <SelectValue placeholder="시험을 선택하세요" />
+              <SelectValue>
+                {selectedExamId === "ALL"
+                  ? "전체 시험 조회"
+                  : exams.find((e) => e.id === selectedExamId)
+                    ? `${exams.find((e) => e.id === selectedExamId)?.title} (${SUBJECT_CONFIG[exams.find((e) => e.id === selectedExamId)!.subject].label})`
+                    : "시험을 선택하세요"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">전체 시험 조회</SelectItem>
@@ -236,7 +242,9 @@ export function GradeListClient({ initialExams }: { initialExams: ExamWithSubmis
         <div className="flex gap-2">
           <Select value={filterGrade} onValueChange={(v) => setFilterGrade(v || "ALL")}>
             <SelectTrigger className="w-[100px]">
-              <SelectValue placeholder="학년" />
+              <SelectValue>
+                {filterGrade === "ALL" ? "전체 학년" : `${filterGrade}학년`}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">전체 학년</SelectItem>
@@ -248,7 +256,9 @@ export function GradeListClient({ initialExams }: { initialExams: ExamWithSubmis
 
           <Select value={filterClass} onValueChange={(v) => setFilterClass(v || "ALL")}>
             <SelectTrigger className="w-[90px]">
-              <SelectValue placeholder="반" />
+              <SelectValue>
+                {filterClass === "ALL" ? "전체 반" : `${filterClass}반`}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">전체 반</SelectItem>

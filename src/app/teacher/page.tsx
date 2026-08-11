@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default async function TeacherDashboardPage() {
+export default function TeacherDashboardPage() {
   redirect("/teacher/grades");
 }

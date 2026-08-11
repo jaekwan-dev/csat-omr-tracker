@@ -308,7 +308,9 @@ export function StudentListClient({ initialStudents }: { initialStudents: Studen
           <div className="flex gap-2">
             <Select value={filterGrade} onValueChange={(v) => setFilterGrade(v || "ALL")}>
               <SelectTrigger className="w-[100px] bg-background">
-                <SelectValue placeholder="학년" />
+                <SelectValue>
+                  {filterGrade === "ALL" ? "전체 학년" : `${filterGrade}학년`}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">전체 학년</SelectItem>
@@ -320,7 +322,9 @@ export function StudentListClient({ initialStudents }: { initialStudents: Studen
 
             <Select value={filterClass} onValueChange={(v) => setFilterClass(v || "ALL")}>
               <SelectTrigger className="w-[90px] bg-background">
-                <SelectValue placeholder="반" />
+                <SelectValue>
+                  {filterClass === "ALL" ? "전체 반" : `${filterClass}반`}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">전체 반</SelectItem>
