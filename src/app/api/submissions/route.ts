@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/session";
 
@@ -79,6 +80,11 @@ export async function POST(req: NextRequest) {
         totalScore,
       },
     });
+
+    // 교사 대시보드의 통계가 갱신되도록 캐시 초기화
+    revalidatePath("/teacher/grades");
+    revalidatePath(`/teacher/exams/${examId}/stats`);
+    revalidatePath("/");
 
     return NextResponse.json({
       submissionId: submission.id,

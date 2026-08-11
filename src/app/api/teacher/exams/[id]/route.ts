@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getTeacherSessionFromRequest } from "@/lib/teacherSession";
 
@@ -66,6 +67,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       include: { questions: { orderBy: { questionNum: "asc" } } },
     });
 
+    revalidatePath("/teacher/exams");
+    revalidatePath("/");
+
     return NextResponse.json({ exam: updated });
   } catch (e) {
     console.error(e);
@@ -86,6 +90,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     await prisma.submission.deleteMany({ where: { examId } });
     await prisma.question.deleteMany({ where: { examId } });
     await prisma.exam.delete({ where: { id: examId } });
+    
+    revalidatePath("/teacher/exams");
+    revalidatePath("/");
+    
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -111,6 +119,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       where: { id: examId },
       data: { isPublished },
     });
+    
+    revalidatePath("/teacher/exams");
+    revalidatePath("/");
+    
     return NextResponse.json({ exam: updated });
   } catch (e) {
     console.error(e);

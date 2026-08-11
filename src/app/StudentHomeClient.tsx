@@ -4,6 +4,14 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, X, CheckCircle2, ChevronRight, FileText, BookOpen, Calculator, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 
 import StudentHeader from "@/components/StudentHeader";
 
@@ -12,31 +20,19 @@ const SUBJECT_META = {
     label: "국어",
     labelEn: "KOREAN",
     icon: BookOpen,
-    color: "bg-purple-400",
-    text: "text-purple-500",
-    border: "border-purple-200",
-    bgLight: "bg-purple-50",
-    gradient: "from-purple-400 to-purple-500",
+    colorVar: "var(--color-subject-korean)",
   },
   MATH: {
     label: "수학",
     labelEn: "MATHEMATICS",
     icon: Calculator,
-    color: "bg-orange-400",
-    text: "text-orange-500",
-    border: "border-orange-200",
-    bgLight: "bg-orange-50",
-    gradient: "from-orange-400 to-orange-500",
+    colorVar: "var(--color-subject-math)",
   },
   ENGLISH: {
     label: "영어",
     labelEn: "ENGLISH",
     icon: Globe,
-    color: "bg-blue-400",
-    text: "text-blue-500",
-    border: "border-blue-200",
-    bgLight: "bg-blue-50",
-    gradient: "from-blue-400 to-blue-500",
+    colorVar: "var(--color-subject-english)",
   },
 } as const;
 
@@ -111,30 +107,29 @@ export default function StudentHomeClient({
         {/* Filter Control Card */}
         <div className="bg-card rounded-3xl p-4 sm:p-5 border border-border shadow-sm flex flex-col gap-4">
           
-          {/* Subject Filter Grid */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {(["KOREAN", "MATH", "ENGLISH"] as Subject[]).map((subjKey) => {
+          {/* Subject Filter (Chips) */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            {(Object.keys(SUBJECT_META) as Subject[]).map((subjKey) => {
               const meta = SUBJECT_META[subjKey];
-              const isActive = selectedSubjectFilter === subjKey;
+              const isSelected = selectedSubjectFilter === subjKey;
               const count = unsubmittedExams.filter((e) => e.subject === subjKey).length;
               return (
                 <button
                   key={subjKey}
                   onClick={() => setSelectedSubjectFilter(subjKey)}
                   className={cn(
-                    "flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-3 sm:py-3.5 rounded-2xl border transition-all duration-300",
-                    isActive 
-                      ? cn(meta.color, "text-white border-transparent shadow-md scale-[1.02]") 
-                      : "bg-secondary text-secondary-foreground border-transparent hover:border-border hover:bg-muted"
+                    "flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all shrink-0 border",
+                    isSelected
+                      ? "border-transparent text-white shadow-md scale-105"
+                      : "bg-card text-muted-foreground border-border hover:bg-secondary"
                   )}
+                  style={isSelected ? { backgroundColor: meta.colorVar } : {}}
                 >
-                  <meta.icon className="w-5 h-5 sm:w-4 sm:h-4 mb-0.5 sm:mb-0" />
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs sm:text-sm font-bold">{meta.label}</span>
-                    <span className={cn("text-[10px] sm:text-xs font-semibold", isActive ? "text-white/80" : "text-muted-foreground")}>
-                      ({count})
-                    </span>
-                  </div>
+                  <meta.icon className="w-4 h-4" />
+                  {meta.label}
+                  <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", isSelected ? "bg-white/20" : "bg-muted")}>
+                    {count}
+                  </span>
                 </button>
               );
             })}
@@ -164,68 +159,101 @@ export default function StudentHomeClient({
         {/* Exam List Cards */}
         <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {filteredExams.length === 0 ? (
-            <div className="bg-card rounded-3xl p-10 text-center border border-border shadow-sm flex flex-col items-center justify-center min-h-[300px]">
-              <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-5">
-                <FileText className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-black text-foreground mb-2">
-                {searchQuery ? "검색 조건에 일치하는 시험이 없습니다" : `현재 응시할 수 있는 ${currentMeta.label} 시험이 없습니다`}
-              </h3>
-              <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-[280px]">
-                {searchQuery ? (
-                  "다른 검색어를 입력하거나 검색어를 초기화해 주세요."
-                ) : isAllCompleted ? (
-                  <>
-                    🎉 <strong className={currentMeta.text}>{currentMeta.label} 영역의 모든 시험 제출을 완료하셨습니다!</strong><br/>
-                    학습 이력 탭에서 성적표를 확인해 보세요.
-                  </>
-                ) : (
-                  "해당 과목에 아직 등록된 시험이 없습니다. 선생님이 새 시험을 등록하면 표시됩니다."
-                )}
-              </p>
+            <Empty className="py-16 bg-card border-border shadow-sm rounded-3xl">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <FileText />
+                </EmptyMedia>
+                <EmptyTitle>
+                  {searchQuery ? "검색 조건에 일치하는 시험이 없습니다" : `현재 응시할 수 있는 ${currentMeta.label} 시험이 없습니다`}
+                </EmptyTitle>
+                <EmptyDescription className="max-w-[280px]">
+                  {searchQuery ? (
+                    "다른 검색어를 입력하거나 검색어를 초기화해 주세요."
+                  ) : isAllCompleted ? (
+                    <>
+                      🎉 <strong style={{ color: currentMeta.colorVar }}>{currentMeta.label} 영역의 모든 시험 제출을 완료하셨습니다!</strong><br/>
+                      학습 이력 탭에서 성적표를 확인해 보세요.
+                    </>
+                  ) : (
+                    "해당 과목에 아직 등록된 시험이 없습니다. 선생님이 새 시험을 등록하면 표시됩니다."
+                  )}
+                </EmptyDescription>
+              </EmptyHeader>
               {isAllCompleted && !searchQuery && (
-                <Link
-                  href="/history"
-                  className={cn("mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md transition-transform hover:-translate-y-0.5", currentMeta.color)}
-                >
-                  <CheckCircle2 className="w-4 h-4" /> 학습 이력 바로가기
-                </Link>
+                <EmptyContent>
+                  <Link
+                    href="/history"
+                    className="mt-4 inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md transition-transform hover:-translate-y-0.5"
+                    style={{ backgroundColor: currentMeta.colorVar }}
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> 학습 이력 바로가기
+                  </Link>
+                </EmptyContent>
               )}
-            </div>
+            </Empty>
           ) : (
             filteredExams.map((exam) => (
               <Link key={exam.id} href={`/exam/${exam.id}`} className="group block">
                 <div
-                  className={cn(
-                    "rounded-3xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-gradient-to-br",
-                    currentMeta.gradient
-                  )}
+                  className="rounded-3xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border"
+                  style={{
+                    backgroundColor: `color-mix(in oklch, ${currentMeta.colorVar} 14%, transparent)`,
+                    borderColor: `color-mix(in oklch, ${currentMeta.colorVar} 30%, transparent)`,
+                  }}
                 >
                   <div className="p-6 sm:p-7 flex flex-col gap-5">
                     
                     <div className="flex items-start justify-between">
                       <div>
-                        <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tighter drop-shadow-sm mb-1">
+                        <h2 
+                          className="text-3xl sm:text-4xl font-black tracking-tighter drop-shadow-sm mb-1"
+                          style={{ color: currentMeta.colorVar }}
+                        >
                           {currentMeta.label}
                         </h2>
-                        <p className="text-xs font-bold text-white/70 tracking-[0.15em]">
+                        <p 
+                          className="text-xs font-bold tracking-[0.15em] opacity-80"
+                          style={{ color: currentMeta.colorVar }}
+                        >
                           {currentMeta.labelEn}
                         </p>
                       </div>
                       
                       {/* Icon Badge */}
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/25 backdrop-blur-md border-[1.5px] border-white/40 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
-                        <currentMeta.icon className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-sm" />
+                      <div 
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300 border"
+                        style={{
+                          backgroundColor: `color-mix(in oklch, ${currentMeta.colorVar} 25%, transparent)`,
+                          borderColor: `color-mix(in oklch, ${currentMeta.colorVar} 40%, transparent)`,
+                        }}
+                      >
+                        <currentMeta.icon className="w-6 h-6 sm:w-8 sm:h-8 drop-shadow-sm" style={{ color: currentMeta.colorVar }} />
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between mt-2">
-                      <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-sm flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        <span className="text-white text-sm font-bold tracking-tight">{exam.title}</span>
+                      <div 
+                        className="px-4 py-2 rounded-full border shadow-sm flex items-center gap-2"
+                        style={{
+                          backgroundColor: `color-mix(in oklch, ${currentMeta.colorVar} 20%, transparent)`,
+                          borderColor: `color-mix(in oklch, ${currentMeta.colorVar} 30%, transparent)`,
+                        }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: currentMeta.colorVar }} />
+                        <span className="text-sm font-bold tracking-tight" style={{ color: currentMeta.colorVar }}>{exam.title}</span>
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-white group-hover:text-foreground transition-colors">
-                        <ChevronRight className="w-6 h-6" />
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center transition-colors group-hover:text-white"
+                        style={{
+                          backgroundColor: `color-mix(in oklch, ${currentMeta.colorVar} 15%, transparent)`,
+                          color: currentMeta.colorVar,
+                        }}
+                      >
+                        <ChevronRight className="w-6 h-6 group-hover:hidden" />
+                        <ChevronRight className="w-6 h-6 hidden group-hover:block text-white" />
+                        {/* A small trick to change color on hover when we use inline styles */}
+                        <style>{`.group:hover .hover-bg-var { background-color: ${currentMeta.colorVar} !important; }`}</style>
                       </div>
                     </div>
 

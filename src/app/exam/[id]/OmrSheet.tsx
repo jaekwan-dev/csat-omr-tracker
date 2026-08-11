@@ -26,27 +26,18 @@ interface OmrSheetProps {
   student: SessionUser;
 }
 
-const SUBJECT_META: Record<string, { label: string; color: string; bgLight: string; text: string; gradient: string }> = {
+const SUBJECT_META: Record<string, { label: string; colorVar: string }> = {
   KOREAN: {
     label: "국어",
-    color: "bg-purple-400",
-    bgLight: "bg-purple-50",
-    text: "text-purple-500",
-    gradient: "from-purple-400 to-purple-500",
+    colorVar: "var(--color-subject-korean)",
   },
   MATH: {
     label: "수학",
-    color: "bg-orange-400",
-    bgLight: "bg-orange-50",
-    text: "text-orange-500",
-    gradient: "from-orange-400 to-orange-500",
+    colorVar: "var(--color-subject-math)",
   },
   ENGLISH: {
     label: "영어",
-    color: "bg-blue-400",
-    bgLight: "bg-blue-50",
-    text: "text-blue-500",
-    gradient: "from-blue-400 to-blue-500",
+    colorVar: "var(--color-subject-english)",
   },
 };
 
@@ -159,8 +150,14 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col pb-28">
       
-      {/* ─── Sticky Header ─── */}
-      <header className={cn("sticky top-0 z-50 bg-gradient-to-r text-white shadow-md", meta.gradient)}>
+      {/* ─── Header ─── */}
+      <header 
+        className="sticky top-0 z-40 text-white shadow-sm border-b"
+        style={{
+          backgroundColor: meta.colorVar,
+          borderColor: `color-mix(in oklch, ${meta.colorVar} 80%, black)`,
+        }}
+      >
         <div className="container max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => router.push("/")}
@@ -194,7 +191,7 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
         <div className="container max-w-3xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-col">
             <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-              <span className={cn("w-2 h-2 rounded-full shadow-sm", meta.color)} />
+              <span className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: meta.colorVar }} />
               {exam.title}
             </div>
             <div className="text-xs font-medium text-muted-foreground ml-4">
@@ -239,16 +236,20 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
                   key={q.questionNum} 
                   className={cn(
                     "flex items-center p-3 sm:p-4 transition-colors",
-                    isAnswered ? meta.bgLight : "hover:bg-muted/30"
+                    !isAnswered && "hover:bg-muted/30"
                   )}
+                  style={isAnswered ? { backgroundColor: `color-mix(in oklch, ${meta.colorVar} 5%, transparent)` } : {}}
                 >
                   
                   {/* Q Number */}
                   <div className="w-10 sm:w-14 flex flex-col items-center justify-center shrink-0">
-                    <span className={cn(
-                      "text-base sm:text-lg font-black transition-colors",
-                      isAnswered ? meta.text : "text-muted-foreground"
-                    )}>
+                    <span 
+                      className={cn(
+                        "text-base sm:text-lg font-black transition-colors",
+                        !isAnswered && "text-muted-foreground"
+                      )}
+                      style={isAnswered ? { color: meta.colorVar } : {}}
+                    >
                       {q.questionNum}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold text-muted-foreground mt-0.5">
@@ -276,12 +277,21 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
                         }}
                         placeholder="정답"
                         className={cn(
-                          "w-full max-w-[140px] text-center text-lg font-black rounded-xl border-2 py-3 focus:outline-none transition-all shadow-sm",
-                          isAnswered
-                            ? `border-${meta.color.replace('bg-', '')} bg-white text-foreground ring-4 ring-${meta.color.replace('bg-', '')}/20`
-                            : "border-input bg-background focus:border-primary/50 focus:ring-4 focus:ring-primary/20"
+                          "w-full max-w-[140px] text-center text-lg font-black rounded-xl border-2 py-3 outline-none transition-all shadow-sm focus:ring-4",
+                          !isAnswered && "border-input bg-background focus:border-primary/50 focus:ring-primary/20"
                         )}
-                        style={isAnswered ? { borderColor: meta.color.replace('bg-', ''), color: meta.color.replace('bg-', '') } : undefined} // fallback if tailwind safelist misses
+                        style={
+                          isAnswered
+                            ? {
+                                borderColor: meta.colorVar,
+                                color: meta.colorVar,
+                                backgroundColor: "color-mix(in oklch, var(--background) 100%, transparent)",
+                                boxShadow: `0 0 0 4px color-mix(in oklch, ${meta.colorVar} 20%, transparent)`
+                              }
+                            : {
+                                backgroundColor: "color-mix(in oklch, var(--background) 100%, transparent)"
+                              }
+                        }
                       />
                     ) : (
                       <div className="flex gap-2 sm:gap-4">
@@ -292,9 +302,10 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
                             className={cn(
                               "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-sm sm:text-base font-black transition-all duration-200 border-2",
                               selected === choice
-                                ? cn(meta.color, "border-transparent text-white shadow-md scale-110")
+                                ? "border-transparent text-white shadow-md scale-110"
                                 : "bg-background border-input text-muted-foreground hover:border-foreground/30 hover:bg-secondary"
                             )}
+                            style={selected === choice ? { backgroundColor: meta.colorVar } : {}}
                           >
                             {choice}
                           </button>
@@ -338,10 +349,9 @@ export default function OmrSheet({ exam, student }: OmrSheetProps) {
               "flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-black text-white shadow-lg transition-all",
               submitting
                 ? "opacity-70 cursor-wait"
-                : "hover:-translate-y-1 hover:shadow-xl active:translate-y-0",
-              meta.gradient
+                : "hover:-translate-y-1 hover:shadow-xl active:translate-y-0"
             )}
-            style={{ background: `var(--tw-gradient-stops)` }} // Let Tailwind handle the gradient via class
+            style={{ backgroundColor: meta.colorVar }}
           >
             {submitting ? (
               <span className="spinner !w-5 !h-5 !border-white/30 !border-t-white" />
