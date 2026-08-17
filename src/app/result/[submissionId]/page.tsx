@@ -209,7 +209,7 @@ export default async function ResultPage({ params }: PageProps) {
         {/* Explanation banner */}
         {exam.explanationPdfUrl && (
           <Card className="border-primary/15 bg-primary/5">
-            <CardContent className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between pt-6">
+            <CardContent className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <FileText className="size-5" />
