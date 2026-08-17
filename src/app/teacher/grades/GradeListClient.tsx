@@ -88,6 +88,10 @@ export function GradeListClient({ initialExams }: { initialExams: ExamWithSubmis
   const [filterGrade, setFilterGrade] = useState<string>("ALL")
   const [filterClass, setFilterClass] = useState<string>("ALL")
 
+  // Sort State
+  const [sortBy, setSortBy] = useState<"date" | "studentNum">("date")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
+
   // Delete State
   const [pendingDelete, setPendingDelete] = useState<SerializedSubmission | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -105,7 +109,7 @@ export function GradeListClient({ initialExams }: { initialExams: ExamWithSubmis
       subs = currentExam.submissions
     }
 
-    return subs.filter(sub => {
+    const filtered = subs.filter(sub => {
       if (filterGrade !== "ALL" && sub.student.grade.toString() !== filterGrade) return false
       if (filterClass !== "ALL" && sub.student.classNum.toString() !== filterClass) return false
 
@@ -120,7 +124,56 @@ export function GradeListClient({ initialExams }: { initialExams: ExamWithSubmis
       }
       return true
     })
-  }, [exams, selectedExamId, currentExam, searchQuery, filterGrade, filterClass])
+
+    // Sort
+    filtered.sort((a, b) => {
+      if (sortBy === "studentNum") {
+        const valA = a.studentId;
+        const valB = b.studentId;
+        if (valA < valB) return sortDir === "asc" ? -1 : 1;
+        if (valA > valB) return sortDir === "asc" ? 1 : -1;
+        // fallback to date if same student
+        return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+      } else {
+        // "date"
+        const valA = new Date(a.submittedAt).getTime();
+        const valB = new Date(b.submittedAt).getTime();
+        if (valA < valB) return sortDir === "asc" ? -1 : 1;
+        if (valA > valB) return sortDir === "asc" ? 1 : -1;
+        return 0;
+      }
+    })
+
+    return filtered
+  }, [exams, selectedExamId, currentExam, searchQuery, filterGrade, filterClass, sortBy, sortDir])
+
+  // Ranks (per exam)
+  const submissionRanks = useMemo(() => {
+    const ranksMap: Record<number, { rank: number; total: number }> = {}
+    
+    exams.forEach(exam => {
+      // Sort submissions by score descending
+      const sortedSubs = [...exam.submissions].sort((a, b) => b.totalScore - a.totalScore)
+      const total = sortedSubs.length
+      
+      let currentRank = 1
+      let currentScore = -1
+      let tiedCount = 0
+      
+      sortedSubs.forEach((sub, idx) => {
+        if (sub.totalScore === currentScore) {
+          tiedCount++
+        } else {
+          currentRank = idx + 1
+          currentScore = sub.totalScore
+          tiedCount = 0
+        }
+        ranksMap[sub.id] = { rank: currentRank, total }
+      })
+    })
+    
+    return ranksMap
+  }, [exams])
 
   // Summary
   const summary = useMemo(() => {
@@ -282,8 +335,8 @@ export function GradeListClient({ initialExams }: { initialExams: ExamWithSubmis
       </div>
 
       {/* List */}
-      <Card className="overflow-hidden">
-        {exams.length === 0 ? (
+      {exams.length === 0 ? (
+        <Card className="overflow-hidden">
           <Empty className="border-0 py-16">
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -293,82 +346,185 @@ export function GradeListClient({ initialExams }: { initialExams: ExamWithSubmis
               <EmptyDescription>아직 학생들의 시험 제출 기록이 없습니다.</EmptyDescription>
             </EmptyHeader>
           </Empty>
-        ) : filteredSubmissions.length === 0 ? (
+        </Card>
+      ) : filteredSubmissions.length === 0 ? (
+        <Card className="overflow-hidden">
           <Empty className="border-0 py-16">
             <EmptyHeader>
               <EmptyTitle>검색 결과가 없습니다</EmptyTitle>
               <EmptyDescription>조건에 맞는 학생의 제출 내역이 없습니다.</EmptyDescription>
             </EmptyHeader>
           </Empty>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[70px] whitespace-nowrap">이름</TableHead>
-                  <TableHead className="w-[85px] whitespace-nowrap">학년 / 반</TableHead>
-                  {selectedExamId === "ALL" && <TableHead>시험</TableHead>}
-                  <TableHead className="w-[60px] text-right whitespace-nowrap">점수</TableHead>
-                  <TableHead className="hidden md:table-cell text-right whitespace-nowrap">제출 일시</TableHead>
-                  <TableHead className="w-8" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSubmissions.map((sub) => {
-                  const exam = exams.find(e => e.id === sub.examId)!
-                  return (
-                    <TableRow key={sub.id}>
-                      <TableCell className="font-bold text-foreground whitespace-nowrap">
-                        {sub.student.name}
-                      </TableCell>
-                      <TableCell>
-                        <span className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-medium text-muted-foreground whitespace-nowrap inline-block">
-                          {sub.student.grade}학년 {sub.student.classNum}반
+        </Card>
+      ) : (
+        <>
+          {/* Mobile View */}
+          <div className="md:hidden flex flex-col gap-3">
+            {/* Sort headers for mobile */}
+            <div className="flex items-center justify-between px-1 mb-1 text-xs font-bold text-muted-foreground">
+              <button 
+                onClick={() => {
+                  if (sortBy === "studentNum") setSortDir(d => d === "asc" ? "desc" : "asc")
+                  else { setSortBy("studentNum"); setSortDir("asc"); }
+                }}
+                className="flex items-center gap-1 hover:text-foreground"
+              >
+                {filterClass !== "ALL" ? "학년/반/번호" : "학년 / 반"} {sortBy === "studentNum" && (sortDir === "asc" ? "▲" : "▼")}
+              </button>
+              <button 
+                onClick={() => {
+                  if (sortBy === "date") setSortDir(d => d === "asc" ? "desc" : "asc")
+                  else { setSortBy("date"); setSortDir("desc"); }
+                }}
+                className="flex items-center gap-1 hover:text-foreground"
+              >
+                제출 일시 {sortBy === "date" && (sortDir === "asc" ? "▲" : "▼")}
+              </button>
+            </div>
+            {filteredSubmissions.map((sub) => {
+              const exam = exams.find(e => e.id === sub.examId)!
+              return (
+                <div key={sub.id} className="bg-card rounded-2xl p-4 border shadow-sm flex flex-col gap-3 relative transition-all">
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base font-black text-foreground">{sub.student.name}</span>
+                        <span className="bg-muted/70 px-2 py-0.5 rounded-md text-[11px] font-bold text-muted-foreground">
+                          {sub.student.grade}학년 {sub.student.classNum}반{filterClass !== "ALL" ? ` ${parseInt(sub.studentId.slice(-2), 10)}번` : ""}
                         </span>
-                      </TableCell>
+                      </div>
                       {selectedExamId === "ALL" && (
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn("text-[9px] px-1.5 py-0.5 rounded font-bold", SUBJECT_BADGE_CLASS[exam.subject])}>
+                            {SUBJECT_CONFIG[exam.subject].label}
+                          </span>
+                          <span className="text-xs font-medium text-muted-foreground">{exam.title}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end shrink-0">
+                      <span className="text-xl font-black tabular-nums text-primary">{sub.totalScore}점</span>
+                      <span className="text-[10px] font-bold text-muted-foreground mt-0.5 bg-muted px-1.5 py-0.5 rounded-sm">
+                        {submissionRanks[sub.id]?.rank}등 <span className="opacity-50">/ {submissionRanks[sub.id]?.total}</span>
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-3 border-t border-border/40">
+                    <span className="text-xs font-medium text-muted-foreground" suppressHydrationWarning>
+                      {formatDate(sub.submittedAt)}
+                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={<Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground" />}
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem variant="destructive" onClick={() => setPendingDelete(sub)}>
+                          <Trash2 className="mr-2 size-4" />
+                          제출 취소
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Desktop View */}
+          <Card className="hidden md:block overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[70px] whitespace-nowrap">이름</TableHead>
+                    <TableHead 
+                      className="w-[100px] whitespace-nowrap cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => {
+                        if (sortBy === "studentNum") setSortDir(d => d === "asc" ? "desc" : "asc")
+                        else { setSortBy("studentNum"); setSortDir("asc"); }
+                      }}
+                    >
+                      {filterClass !== "ALL" ? "학년/반/번호" : "학년 / 반"} {sortBy === "studentNum" && (sortDir === "asc" ? "▲" : "▼")}
+                    </TableHead>
+                    {selectedExamId === "ALL" && <TableHead>시험</TableHead>}
+                    <TableHead className="w-[80px] text-right whitespace-nowrap">점수 / 등수</TableHead>
+                    <TableHead 
+                      className="hidden md:table-cell text-right whitespace-nowrap cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => {
+                        if (sortBy === "date") setSortDir(d => d === "asc" ? "desc" : "asc")
+                        else { setSortBy("date"); setSortDir("desc"); }
+                      }}
+                    >
+                      제출 일시 {sortBy === "date" && (sortDir === "asc" ? "▲" : "▼")}
+                    </TableHead>
+                    <TableHead className="w-8" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSubmissions.map((sub) => {
+                    const exam = exams.find(e => e.id === sub.examId)!
+                    return (
+                      <TableRow key={sub.id}>
+                        <TableCell className="font-bold text-foreground whitespace-nowrap">
+                          {sub.student.name}
+                        </TableCell>
                         <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-medium line-clamp-1">{exam.title}</span>
-                            <span className={cn("text-[9px] px-1 py-0.5 rounded font-bold w-fit mt-0.5", SUBJECT_BADGE_CLASS[exam.subject])}>
-                              {SUBJECT_CONFIG[exam.subject].label}
+                          <span className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-medium text-muted-foreground whitespace-nowrap inline-block">
+                            {sub.student.grade}학년 {sub.student.classNum}반{filterClass !== "ALL" ? ` ${parseInt(sub.studentId.slice(-2), 10)}번` : ""}
+                          </span>
+                        </TableCell>
+                        {selectedExamId === "ALL" && (
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium line-clamp-1">{exam.title}</span>
+                              <span className={cn("text-[9px] px-1 py-0.5 rounded font-bold w-fit mt-0.5", SUBJECT_BADGE_CLASS[exam.subject])}>
+                                {SUBJECT_CONFIG[exam.subject].label}
+                              </span>
+                            </div>
+                          </TableCell>
+                        )}
+                        <TableCell className="text-right whitespace-nowrap">
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="font-bold tabular-nums text-primary">{sub.totalScore}점</span>
+                            <span className="text-[10px] font-medium text-muted-foreground">
+                              {submissionRanks[sub.id]?.rank}등 / {submissionRanks[sub.id]?.total}
                             </span>
                           </div>
                         </TableCell>
-                      )}
-                      <TableCell className="text-right font-bold tabular-nums text-primary whitespace-nowrap">
-                        {sub.totalScore}점
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-right text-xs text-muted-foreground tabular-nums" suppressHydrationWarning>
-                        {formatDate(sub.submittedAt)}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            render={<Button variant="ghost" size="icon" className="size-8" />}
-                          >
-                            <MoreHorizontal />
-                            <span className="sr-only">작업 열기</span>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() => setPendingDelete(sub)}
+                        <TableCell className="hidden md:table-cell text-right text-xs text-muted-foreground tabular-nums" suppressHydrationWarning>
+                          {formatDate(sub.submittedAt)}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              render={<Button variant="ghost" size="icon" className="size-8" />}
                             >
-                              <Trash2 />
-                              제출 취소
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </Card>
+                              <MoreHorizontal />
+                              <span className="sr-only">작업 열기</span>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => setPendingDelete(sub)}
+                              >
+                                <Trash2 className="mr-2 size-4" />
+                                제출 취소
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </>
+      )}
 
       {/* Delete Alert */}
       <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>

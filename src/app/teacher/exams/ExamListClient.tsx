@@ -117,7 +117,7 @@ export function ExamListClient({ initialExams }: { initialExams: Exam[] }) {
   async function togglePublish(exam: Exam) {
     try {
       const res = await fetch(`/api/teacher/exams/${exam.id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPublished: !exam.isPublished }),
       })

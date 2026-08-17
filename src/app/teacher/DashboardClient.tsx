@@ -186,7 +186,7 @@ export default function DashboardClient({ initialExams }: { initialExams: Exam[]
   const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [sortBy, setSortBy] = useState<"rank" | "studentId" | "name" | "percent">("rank");
+  const [sortBy, setSortBy] = useState<"rank" | "studentId" | "name" | "percent" | "classAndNum">("rank");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filterClass, setFilterClass] = useState<number | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -281,6 +281,7 @@ export default function DashboardClient({ initialExams }: { initialExams: Exam[]
       let valA, valB;
       if (sortBy === "rank") { valA = a.rank; valB = b.rank; }
       else if (sortBy === "studentId") { valA = a.studentId; valB = b.studentId; }
+      else if (sortBy === "classAndNum") { valA = a.studentId; valB = b.studentId; }
       else if (sortBy === "name") { valA = a.studentName; valB = b.studentName; }
       else { valA = a.percent; valB = b.percent; }
 
@@ -574,7 +575,7 @@ export default function DashboardClient({ initialExams }: { initialExams: Exam[]
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-base font-black text-foreground truncate">{row.studentName}</span>
                         <span className="bg-secondary/70 text-secondary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 border border-border/30">
-                          {row.grade}학년 {row.classNum}반
+                          {row.grade}학년 {row.classNum}반 {parseInt(row.studentId.slice(-2), 10)}번
                         </span>
                       </div>
                       <div className="text-[11px] font-bold text-muted-foreground/70 tracking-wider font-mono">{row.studentId}</div>
@@ -640,7 +641,7 @@ export default function DashboardClient({ initialExams }: { initialExams: Exam[]
                     <th className="px-5 py-4 text-[13px] font-bold text-muted-foreground text-left cursor-pointer select-none whitespace-nowrap hover:text-foreground transition-colors" onClick={() => handleSort("rank")}>석차 <SortIcon field="rank" /></th>
                     <th className="px-5 py-4 text-[13px] font-bold text-muted-foreground text-left cursor-pointer select-none whitespace-nowrap hover:text-foreground transition-colors" onClick={() => handleSort("studentId")}>학번 <SortIcon field="studentId" /></th>
                     <th className="px-5 py-4 text-[13px] font-bold text-muted-foreground text-left cursor-pointer select-none whitespace-nowrap hover:text-foreground transition-colors" onClick={() => handleSort("name")}>이름 <SortIcon field="name" /></th>
-                    <th className="px-5 py-4 text-[13px] font-bold text-muted-foreground text-left whitespace-nowrap">학년/반</th>
+                    <th className="px-5 py-4 text-[13px] font-bold text-muted-foreground text-left cursor-pointer select-none whitespace-nowrap hover:text-foreground transition-colors" onClick={() => handleSort("classAndNum")}>학년/반/번호 <SortIcon field="classAndNum" /></th>
                     <th className="px-5 py-4 text-[13px] font-bold text-muted-foreground text-left cursor-pointer select-none whitespace-nowrap hover:text-foreground transition-colors" onClick={() => handleSort("percent")}>총점 <SortIcon field="percent" /></th>
                     <th className="px-5 py-4 text-[13px] font-bold text-muted-foreground text-left whitespace-nowrap">정/오/미</th>
                     <th className="px-5 py-4 text-[13px] font-bold text-muted-foreground text-left whitespace-nowrap">정답률</th>
@@ -667,7 +668,7 @@ export default function DashboardClient({ initialExams }: { initialExams: Exam[]
                           </td>
                           <td className="px-5 py-4">
                             <span className="bg-secondary/70 text-secondary-foreground text-[11px] font-bold px-2 py-1 rounded-lg whitespace-nowrap border border-border/30">
-                              {row.grade}학년 {row.classNum}반
+                              {row.grade}학년 {row.classNum}반 {parseInt(row.studentId.slice(-2), 10)}번
                             </span>
                           </td>
                           <td className="px-5 py-4">
